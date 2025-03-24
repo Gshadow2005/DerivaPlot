@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from scipy.integrate import quad
 
-# On this Updaate: Change its design and a reset button
+# On this Update: Change its design and a reset button
 
 class FunctionVisualizerApp:
     def __init__(self, root):
