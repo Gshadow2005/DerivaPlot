@@ -735,8 +735,9 @@ class FunctionVisualizerApp:
         webbrowser.open("https://github.com/Gshadow2005/DerivaPlot")  
     
     def on_closing(self):
-        """Handle window closing."""
-        plt.close('all')  # Close all matplotlib
+        for after_id in self.root.tk.call('after', 'info'):
+            self.root.after_cancel(after_id)
+        plt.close('all') 
         self.root.destroy()
 
 def main():
