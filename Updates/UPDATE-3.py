@@ -12,13 +12,15 @@ import tempfile
 class FunctionVisualizerApp:
     def __init__(self, root):
         self.root = root
-        self.root.geometry("900x750")
+        self.root.geometry("1300x750")
+
+        self.root.minsize(1300, 750)
 
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        x = (screen_width - 900) // 2
+        x = (screen_width - 1300) // 2
         y = (screen_height - 750) // 2
-        self.root.geometry(f'900x750+{x}+{y}')
+        self.root.geometry(f'1300x750+{x}+{y}')
 
         # icon diri
         self.root.title("DerivaPlot")
@@ -64,12 +66,19 @@ class FunctionVisualizerApp:
         )
         self.theme_button.pack(side="right", padx=5, pady=5)
 
-        self.input_frame = ctk.CTkFrame(self.root)
-        self.input_frame.pack(padx=10, pady=5, fill="x")
-        
-        self.graph_frame = ctk.CTkFrame(self.root)
-        self.graph_frame.pack(padx=10, pady=(0, 5), fill="both", expand=True)
-        
+        self.main_container = ctk.CTkFrame(self.root)
+        self.main_container.pack(padx=10, pady=5, fill="both", expand=True)
+
+        self.main_container.grid_columnconfigure(0, weight=1)
+        self.main_container.grid_columnconfigure(1, weight=4)
+        self.main_container.grid_rowconfigure(0, weight=1)
+
+        self.input_frame = ctk.CTkFrame(self.main_container)
+        self.input_frame.grid(row=0, column=0, padx=(0, 5), pady=5, sticky="nsew")
+
+        self.graph_frame = ctk.CTkFrame(self.main_container)
+        self.graph_frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
+
         # Function input
         function_row = ctk.CTkFrame(self.input_frame)
         function_row.pack(fill="x", pady=3)
@@ -102,17 +111,16 @@ class FunctionVisualizerApp:
         # Derivative
         ctk.CTkLabel(range_row, text="Derivative:", width=80).pack(side="left", padx=(15, 5))
         self.entry_order = ctk.CTkEntry(range_row, width=50, placeholder_text="Order")
-        self.entry_order.insert(0, "1")  # Default Valuer
-        self.entry_order.pack(side="left", padx=5)
+        self.entry_order.insert(0, "1")
+        self.entry_order.pack(side="left", padx=5, fill="x", expand=True)
         
         # Action buttons
         button_row = ctk.CTkFrame(self.input_frame)
         button_row.pack(fill="x", pady=(5, 3))
-        
-        # Buttons
+        button_row.columnconfigure(0, weight=1)
+        button_row.columnconfigure(4, weight=1)
         button_width = 120
         button_height = 30
-        button_padding = 3
         
         self.btn_plot = ctk.CTkButton(
             button_row, 
@@ -121,7 +129,7 @@ class FunctionVisualizerApp:
             width=button_width,
             height=button_height
         )
-        self.btn_plot.pack(side="left", padx=button_padding)
+        self.btn_plot.grid(row=0, column=1, padx=3, pady=5)
         
         self.btn_save = ctk.CTkButton(
             button_row, 
@@ -131,7 +139,7 @@ class FunctionVisualizerApp:
             width=button_width,
             height=button_height
         )
-        self.btn_save.pack(side="left", padx=button_padding)
+        self.btn_save.grid(row=0, column=2, padx=3, pady=5)
         
         self.btn_receipt = ctk.CTkButton(
             button_row, 
@@ -141,7 +149,7 @@ class FunctionVisualizerApp:
             width=button_width,
             height=button_height
         )
-        self.btn_receipt.pack(side="left", padx=button_padding)
+        self.btn_receipt.grid(row=0, column=3, padx=3, pady=5)
         
         # Graph placeholder
         self.canvas_frame = ctk.CTkFrame(self.graph_frame)
@@ -165,6 +173,8 @@ class FunctionVisualizerApp:
         )
         self.updates_link.pack(side="right", padx=10)
         self.updates_link.bind("<Button-1>", lambda e: self.open_updates_link())
+
+        self.create_empty_graph()
     
     def toggle_theme(self):
         """Toggle between light and dark mode"""
@@ -364,18 +374,12 @@ class FunctionVisualizerApp:
     def on_plot(self):
         """Handle the plot button click."""
         try:
-            # Clear previous plot if exists
             if hasattr(self, 'canvas'):
                 self.canvas.get_tk_widget().destroy()
             if hasattr(self, 'toolbar'):
                 self.toolbar.destroy()
             if hasattr(self, 'toolbar_frame'):
                 self.toolbar_frame.destroy()
-
-            # maintain size
-            self.canvas_frame.pack_forget()
-            self.canvas_frame = ctk.CTkFrame(self.graph_frame)
-            self.canvas_frame.pack(fill="both", expand=True, padx=5, pady=5)  
             
             # Validate inputs
             is_valid, f, x_range, order_val = self.validate_inputs()
@@ -476,18 +480,7 @@ class FunctionVisualizerApp:
         self.entry_order.delete(0, "end")
         self.entry_order.insert(0, "1") 
         
-        # Clear the plot
-        if hasattr(self, 'canvas'):
-            self.canvas.get_tk_widget().destroy()
-        if hasattr(self, 'toolbar'):
-            self.toolbar.destroy()
-        if hasattr(self, 'toolbar_frame'):
-            self.toolbar_frame.destroy()
-        
-        # Recreate the canvas frame
-        self.canvas_frame.pack_forget()
-        self.canvas_frame = ctk.CTkFrame(self.graph_frame)
-        self.canvas_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        self.create_empty_graph()
         
         # Reset the plot button
         self.btn_plot.configure(
@@ -504,7 +497,41 @@ class FunctionVisualizerApp:
         # Reset status
         self.status_var.set("Ready to plot")
 
-        self.fig = None
+    def create_empty_graph(self):
+        """Create an empty placeholder graph"""
+        if hasattr(self, 'canvas'):
+            self.canvas.get_tk_widget().destroy()
+        if hasattr(self, 'toolbar'):
+            self.toolbar.destroy()
+        if hasattr(self, 'toolbar_frame'):
+            self.toolbar_frame.destroy()
+
+        plt.style.use('default')
+        self.fig, ax = plt.subplots(figsize=(8, 5))
+
+        background_color = "#242424" if self.appearance_mode == "dark" else "white"
+        text_color = "white" if self.appearance_mode == "dark" else "black"
+        self.fig.patch.set_facecolor(background_color)
+        ax.set_facecolor(background_color)
+
+        ax.set_xlabel('x', color=text_color)
+        ax.set_ylabel('y', color=text_color)
+        ax.set_title('Graph will appear here', color=text_color)
+        ax.tick_params(colors=text_color)
+        for spine in ax.spines.values():
+            spine.set_edgecolor(text_color)
+            
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.canvas_frame)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        self.toolbar_frame = ctk.CTkFrame(self.canvas_frame)
+        self.toolbar_frame.pack(side="bottom", fill="x")
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
+        self.toolbar.update()
     
     def on_save_image(self):
         """Save the current plot as an image."""
@@ -594,7 +621,7 @@ class FunctionVisualizerApp:
     def open_updates_link(self):
         """Open the updates webpage in the default browser"""
         import webbrowser
-        webbrowser.open("https://github.com/dnjstr/CALCULUS-PIT/tree/masterglen")  
+        webbrowser.open("https://github.com/Gshadow2005/DerivaPlot")  
     
     def on_closing(self):
         """Handle window closing."""
