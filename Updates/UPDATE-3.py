@@ -382,12 +382,19 @@ class FunctionVisualizerApp:
     def on_plot(self):
         """Handle the plot button click."""
         try:
+            is_valid, f, x_range, order_val = self.validate_inputs()
+            if not is_valid:
+                return
+        
             if hasattr(self, 'canvas'):
                 self.canvas.get_tk_widget().destroy()
             if hasattr(self, 'toolbar'):
                 self.toolbar.destroy()
             if hasattr(self, 'toolbar_frame'):
                 self.toolbar_frame.destroy()
+
+            self.status_var.set("Calculating and plotting...")
+            self.root.update()
             
             # Validate inputs
             is_valid, f, x_range, order_val = self.validate_inputs()
