@@ -150,6 +150,14 @@ class FunctionVisualizerApp:
             height=button_height
         )
         self.btn_receipt.grid(row=0, column=3, padx=3, pady=5)
+
+        self.btn_refresh = ctk.CTkButton(
+            button_row, 
+            text="↻ Refresh", 
+            command=self.on_refresh,
+            width=button_width,
+            height=button_height
+        )
         
         # Graph placeholder
         self.canvas_frame = ctk.CTkFrame(self.graph_frame)
@@ -446,6 +454,13 @@ class FunctionVisualizerApp:
                 # Enable save buttons
                 self.btn_save.configure(state="normal")
                 self.btn_receipt.configure(state="normal")
+
+                self.btn_refresh.grid(row=0, column=4, padx=3, pady=5)
+                self.current_data = {
+                    "expr": self.entry_func.get(),
+                    "x_range": x_range,
+                    "order": order_val
+                }
                 
                 # Store data for receipt
                 self.current_data = {
@@ -493,6 +508,7 @@ class FunctionVisualizerApp:
         # Disable save buttons
         self.btn_save.configure(state="disabled")
         self.btn_receipt.configure(state="disabled")
+        self.btn_refresh.grid_forget()
         
         # Reset status
         self.status_var.set("Ready to plot")
@@ -617,6 +633,94 @@ class FunctionVisualizerApp:
             # temp file cleannerr
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
+
+    def on_refresh(self):
+        """Update the plot with current inputs without clearing them."""
+        try:
+            if hasattr(self, 'canvas'):
+                self.canvas.get_tk_widget().destroy()
+            if hasattr(self, 'toolbar'):
+                self.toolbar.destroy()
+            if hasattr(self, 'toolbar_frame'):
+                self.toolbar_frame.destroy()
+            
+            # Validate inputs
+            is_valid, f, x_range, order_val = self.validate_inputs()
+            if not is_valid:
+                return
+            
+            self.status_var.set("Refreshing plot...")
+            self.root.update()
+            
+            # Create plot
+            x_vals = np.linspace(x_range[0], x_range[1], 400)
+            
+            try:
+                y_vals = f(x_vals)
+                dydx_vals = self.numerical_derivative(f, x_vals, order_val)
+                integral_vals = self.numerical_integral(f, x_vals)
+                
+                # Create figure
+                plt.style.use('default')
+                self.fig, ax = plt.subplots(figsize=(8, 5))
+                
+                # Set colors based on theme
+                background_color = "#242424" if self.appearance_mode == "dark" else "white"
+                text_color = "white" if self.appearance_mode == "dark" else "black"
+                self.fig.patch.set_facecolor(background_color)
+                ax.set_facecolor(background_color)
+                
+                # Plot data
+                ax.plot(x_vals, y_vals, label=f'Function: {self.entry_func.get()}', linewidth=2)
+                ax.plot(x_vals, dydx_vals, label=f'{order_val}-Order Derivative', linestyle='dashed', linewidth=2)
+                ax.plot(x_vals, integral_vals, label='Integral', linestyle='dotted', linewidth=2)
+                
+                # Set labels and appearance
+                ax.set_xlabel('x', color=text_color)
+                ax.set_ylabel('y', color=text_color)
+                ax.set_title('Function, Derivative, and Integral', color=text_color)
+                ax.tick_params(colors=text_color)
+                for spine in ax.spines.values():
+                    spine.set_edgecolor(text_color)
+                
+                # Update legend
+                legend = ax.legend()
+                if legend is not None:
+                    frame = legend.get_frame()
+                    frame.set_facecolor(background_color)
+                    frame.set_edgecolor(text_color)
+                    for text in legend.get_texts():
+                        text.set_color(text_color)
+                        
+                ax.grid(True, alpha=0.3)
+                plt.tight_layout()
+                
+                # Display in UI
+                self.canvas = FigureCanvasTkAgg(self.fig, master=self.canvas_frame)
+                self.canvas.draw()
+                self.canvas.get_tk_widget().pack(fill="both", expand=True)
+                
+                # navigation toolbar
+                self.toolbar_frame = ctk.CTkFrame(self.canvas_frame)
+                self.toolbar_frame.pack(side="bottom", fill="x")
+                self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
+                self.toolbar.update()
+                
+                # Store data for receipt
+                self.current_data = {
+                    "expr": self.entry_func.get(),
+                    "x_range": x_range,
+                    "order": order_val
+                }
+                
+                self.status_var.set("Plot refreshed successfully")
+            except Exception as e:
+                messagebox.showerror("Calculation Error", f"Error calculating results: {e}")
+                self.status_var.set("Error in calculation")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
+            self.status_var.set("Error occurred")            
 
     def open_updates_link(self):
         """Open the updates webpage in the default browser"""
