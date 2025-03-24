@@ -55,7 +55,7 @@ class FunctionVisualizerApp:
 
     def add_function_field(self):
         """Add a new function input field"""
-        function_row = ctk.CTkFrame(self.input_frame)
+        function_row = ctk.CTkFrame(self.functions_scroll_frame)
         function_row.pack(fill="x", pady=3)
         
         ctk.CTkLabel(function_row, text="Func " + str(len(self.functions_list) + 2) + ":", width=80).pack(side="left", padx=5)
@@ -202,6 +202,15 @@ class FunctionVisualizerApp:
             width=button_width,
             height=button_height
         )
+
+        # Functions scroll frame
+        self.functions_scroll_frame = ctk.CTkScrollableFrame(
+            self.input_frame, 
+            orientation="vertical", 
+            height=200  # Adjust height as needed
+        )
+        self.functions_scroll_frame.pack(fill="x", pady=3)
+
         
         # Graph placeholder
         self.canvas_frame = ctk.CTkFrame(self.graph_frame)
