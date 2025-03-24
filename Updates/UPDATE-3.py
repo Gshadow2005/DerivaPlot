@@ -1,13 +1,13 @@
+import os
+import tempfile
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import sympy as sp
-from scipy.integrate import quad
+import matplotlib.pyplot as plt
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
-import os
 from PIL import Image, ImageDraw, ImageFont
-import tempfile
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from scipy.integrate import quad
 
 class FunctionVisualizerApp:
     def __init__(self, root):
