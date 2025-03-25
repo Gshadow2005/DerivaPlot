@@ -129,7 +129,7 @@ class FunctionVisualizerApp:
             width=120,
             height=28
         )
-        self.add_function_button.pack(fill="x", pady=3)
+        self.add_function_button.pack(fill="x", pady=3, padx=10)
         
         # Range input
         range_row = ctk.CTkFrame(self.input_frame)
