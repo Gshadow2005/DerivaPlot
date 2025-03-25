@@ -543,8 +543,18 @@ class FunctionVisualizerApp:
                 
                 # Plot each function with its derivative and integral
                 for i, (expr, f) in enumerate(functions):
-                    color_idx = i % len(colors)
-                    base_color = colors[color_idx]
+                    # Determine color palette
+                    if len(functions) == 1:
+                        # For single function, use distinct colors
+                        base_color = colors[0]
+                        derivative_color = colors[1]
+                        integral_color = colors[2]
+                    else:
+                        # For multiple functions, use consistent color per function
+                        color_idx = i % len(colors)
+                        base_color = colors[color_idx]
+                        derivative_color = base_color
+                        integral_color = base_color
                     
                     # Calculate function, derivative and integral
                     y_vals = f(x_vals)
@@ -555,9 +565,9 @@ class FunctionVisualizerApp:
                     ax.plot(x_vals, y_vals, label=f'Function: {expr}', 
                         color=base_color, linewidth=2)
                     ax.plot(x_vals, dydx_vals, label=f'{order_val}-Order Derivative of {expr}', 
-                        color=base_color, linestyle='dashed', linewidth=1.5)
+                        color=derivative_color, linestyle='dashed', linewidth=1.5)
                     ax.plot(x_vals, integral_vals, label=f'Integral of {expr}', 
-                        color=base_color, linestyle='dotted', linewidth=1.5)
+                        color=integral_color, linestyle='dotted', linewidth=1.5)
                     
                     # Store data for later use
                     all_functions_data.append({
