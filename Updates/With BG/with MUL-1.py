@@ -140,6 +140,15 @@ class FunctionVisualizerApp:
             height=28
         )
         self.add_function_button.pack(fill="x", pady=3, padx=10)
+
+        self.critical_values_button = ctk.CTkButton(
+            self.input_frame,
+            text="Show Critical Values",
+            command=self.on_show_critical_values,
+            width=120,
+            height=28
+        )
+        self.critical_values_button.pack(fill="x", pady=3, padx=10)
         
         # Range input
         range_row = ctk.CTkFrame(self.input_frame)
@@ -584,6 +593,170 @@ class FunctionVisualizerApp:
             self.create_empty_graph()
             self.status_var.set("Error occurred")
 
+    def find_critical_values(self, function, x_range):
+        try:
+            x = sp.Symbol('x')
+            expr = sp.sympify(function, locals={"sin": sp.sin, "cos": sp.cos, "tan": sp.tan, 
+                                                "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt,
+                                                "pi": sp.pi, "e": sp.E})
+            
+            # First derivative
+            derivative = sp.diff(expr, x)
+            
+            # Find derivative roots within the range
+            critical_points = sp.solve(derivative, x)
+            
+            # Filter critical points within the specified range
+            valid_critical_points = [
+                point for point in critical_points 
+                if x_range[0] <= float(point) <= x_range[1] and point.is_real
+            ]
+            
+            # If no critical points found, return empty list
+            if not valid_critical_points:
+                return []
+            
+            # Evaluate function values at critical points
+            critical_values = []
+            for point in valid_critical_points:
+                point_val = float(point)
+                func_val = float(expr.subs(x, point))
+                derivative_val = float(derivative.subs(x, point))
+                
+                critical_values.append({
+                    'x': point_val,
+                    'y': func_val,
+                    'derivative': derivative_val
+                })
+            
+            return critical_values
+        except Exception as e:
+            messagebox.showerror("Critical Value Error", f"Error calculating critical values: {e}")
+            return []
+        
+    def on_show_critical_values(self):
+        """Handle showing critical values on the plot"""
+        try:
+            is_valid, functions, x_range, order_val = self.validate_inputs()
+            if not is_valid:
+                self.create_empty_graph()
+                return
+        
+            if hasattr(self, 'canvas'):
+                self.canvas.get_tk_widget().destroy()
+            if hasattr(self, 'toolbar'):
+                self.toolbar.destroy()
+            if hasattr(self, 'toolbar_frame'):
+                self.toolbar_frame.destroy()
+
+            self.status_var.set("Calculating critical values...")
+            self.root.update()
+            
+            # Create plot
+            x_vals = np.linspace(x_range[0], x_range[1], 400)
+            
+            try:
+                # Create figure
+                plt.style.use('default')
+                self.fig, ax = plt.subplots(figsize=(8, 5))
+                
+                # Set colors based on theme
+                background_color = "#242424" if self.appearance_mode == "dark" else "white"
+                text_color = "white" if self.appearance_mode == "dark" else "black"
+                self.fig.patch.set_facecolor(background_color)
+                ax.set_facecolor(background_color)
+                
+                # Color cycle for multiple functions
+                colors = plt.cm.tab10.colors
+                
+                critical_values_data = []
+                
+                # Plot each function with its critical values
+                for i, (expr, f) in enumerate(functions):
+                    color_idx = i % len(colors)
+                    base_color = colors[color_idx]
+                    
+                    # Calculate function values
+                    y_vals = f(x_vals)
+                    
+                    # Find critical values
+                    critical_values = self.find_critical_values(expr, x_range)
+                    
+                    # Plot function
+                    ax.plot(x_vals, y_vals, label=f'Function: {expr}', 
+                        color=base_color, linewidth=2)
+                    
+                    # Plot critical points
+                    if critical_values:
+                        cv_x = [point['x'] for point in critical_values]
+                        cv_y = [point['y'] for point in critical_values]
+                        ax.scatter(cv_x, cv_y, color='red', s=100, zorder=5, 
+                                label=f'Critical Points of {expr}')
+                        
+                        # Annotate critical points
+                        for point in critical_values:
+                            ax.annotate(
+                                f"x={point['x']:.2f}\ny={point['y']:.2f}\nf'={point['derivative']:.2f}", 
+                                (point['x'], point['y']), 
+                                xytext=(10, 10),
+                                textcoords='offset points',
+                                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
+                                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0')
+                            )
+                    
+                    critical_values_data.append({
+                        "expr": expr,
+                        "critical_values": critical_values
+                    })
+                
+                # Set labels and appearance
+                ax.set_xlabel('x', color=text_color)
+                ax.set_ylabel('y', color=text_color)
+                ax.set_title('Functions with Critical Values', color=text_color)
+                ax.tick_params(colors=text_color)
+                for spine in ax.spines.values():
+                    spine.set_edgecolor(text_color)
+                
+                # Update legend
+                legend = ax.legend()
+                if legend is not None:
+                    frame = legend.get_frame()
+                    frame.set_facecolor(background_color)
+                    frame.set_edgecolor(text_color)
+                    for text in legend.get_texts():
+                        text.set_color(text_color)
+                        
+                ax.grid(True, alpha=0.3)
+                plt.tight_layout()
+                
+                # Display in UI
+                self.canvas = FigureCanvasTkAgg(self.fig, master=self.canvas_frame)
+                self.canvas.draw()
+                self.canvas.get_tk_widget().pack(fill="both", expand=True)
+                
+                # navigation toolbar
+                self.toolbar_frame = ctk.CTkFrame(self.canvas_frame)
+                self.toolbar_frame.pack(side="bottom", fill="x")
+                self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
+                self.toolbar.update()
+                
+                # Store data for receipt
+                self.current_data = {
+                    "functions": [{"expr": expr} for expr, _ in functions],
+                    "x_range": x_range,
+                    "critical_values": critical_values_data
+                }
+                
+                self.status_var.set("Critical values plotted successfully")
+            except Exception as e:
+                messagebox.showerror("Calculation Error", f"Error calculating critical values: {e}")
+                self.status_var.set("Error in calculation")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
+            self.create_empty_graph()
+            self.status_var.set("Error occurred")
+
     def on_reset_plot(self):
         """Reset the plot and input fields."""
         # Clear input fields
@@ -686,6 +859,22 @@ class FunctionVisualizerApp:
             return
         
         temp_path = None
+
+        if hasattr(self, 'current_data') and 'critical_values' in self.current_data:
+            y_pos += 30
+            draw.text((30, y_pos), "Critical Values:", fill="black", font=font_text)
+            y_pos += 30
+            
+            for func_data in self.current_data['critical_values']:
+                cv_text = f"{func_data['expr']}: "
+                if func_data['critical_values']:
+                    cv_points = ", ".join([f"x={cv['x']:.2f}" for cv in func_data['critical_values']])
+                    cv_text += cv_points
+                else:
+                    cv_text += "No critical values"
+                
+                draw.text((30, y_pos), cv_text, fill="black", font=font_text)
+                y_pos += 30        
 
         try:
             # Create receipt image with additional height for multiple functions
