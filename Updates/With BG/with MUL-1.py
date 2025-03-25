@@ -356,38 +356,53 @@ class FunctionVisualizerApp:
 
     3. Set the derivative order (1 for first derivative, 2 for second, etc.)
 
-    4. Click "Plot Functions" to visualize:
+    4. Additional Features:
+    - Click "+ Add Function" to plot multiple functions simultaneously
+    - Use the "Show Critical Values" button to identify key points on the function
+    - Toggle between light and dark themes for comfortable viewing
+
+    5. Click "Plot Functions" to visualize:
     - The original function
     - The specified derivative
     - The integral of the function
 
-    5. Use the navigation toolbar to zoom, pan, or save the plot
+    6. Use the navigation toolbar to:
+    - Zoom in/out
+    - Pan the graph
+    - Save the plot directly
 
-    6. Click "Save Image" to export just the graph
-    
-    7. Click "Save Receipt" to create a complete report with the graph
-    and function details
+    7. Additional Buttons:
+    - "Save Image": Export the graph as PNG, JPEG, or PDF
+    - "Generate Report": Create a comprehensive function analysis report
+    - "Refresh": Update the plot without clearing inputs
+    - "Reset": Clear all inputs and reset the graph
 
-    Supported mathematical functions:
-    - Basic: +, -, *, /, **
+    Supported Mathematical Functions:
+    - Basic Operations: +, -, *, /, **
     - Trigonometric: sin, cos, tan
-    - Others: exp, log, sqrt
+    - Exponential/Logarithmic: exp, log, sqrt
     - Constants: pi, e
 
     Tips:
+    - Use parentheses for complex functions to ensure correct order of operations
+    - The derivative is calculated numerically, so very steep functions might show approximation errors
+    - Experiment with multiple functions and derivative orders
+    - Critical values help identify important points like local maxima, minima, and inflection points
 
-    For complex functions, use parentheses to ensure proper order of operations
-    The derivative is calculated numerically, so very steep functions might show
-    some approximation errors
-    Toggle between light and dark themes using the theme button
-    
-    **Group Members:**  
+    Keyboard Shortcuts (in Navigation Toolbar):
+    - Left-click and drag: Pan
+    - Right-click and drag: Zoom
+    - Scroll wheel: Zoom in/out
+
+    **Project Team:**  
     📌 Anino, Glenn  
     📌 Antonio, Den  
     📌 Casia, Jaybird  
     📌 Espina, Cyril  
     📌 Flores, Sophia  
     📌 Lacanaria, Lorenz  
+
+    Need Help? Check our GitHub repository for updates and support. 
     """
         
         help_text.insert("1.0", help_content)
@@ -794,6 +809,24 @@ class FunctionVisualizerApp:
         for frame, _ in self.functions_list:
             frame.destroy()
         self.functions_list.clear()
+
+        for i in range(2, 8):  # Recreate Func 2 to Func 7
+            function_row = ctk.CTkFrame(self.functions_scroll_frame)
+            function_row.pack(fill="x", pady=3)
+            
+            ctk.CTkLabel(function_row, text=f"Func {i}:", width=80).pack(side="left", padx=5)
+            entry_func = ctk.CTkEntry(function_row, width=240, placeholder_text="e.g., cos(x)")
+            entry_func.pack(side="left", padx=5, fill="x", expand=True)
+            
+            remove_btn = ctk.CTkButton(
+                function_row,
+                text="✕",
+                width=30,
+                height=28,
+                command=lambda fr=function_row, ef=entry_func: self.remove_function_field(fr, ef)
+            )
+            remove_btn.pack(side="right", padx=5)
+            self.functions_list.append((function_row, entry_func))
         
         self.create_empty_graph()
         
