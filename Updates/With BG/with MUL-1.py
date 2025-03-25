@@ -206,8 +206,8 @@ class FunctionVisualizerApp:
         
         self.btn_receipt = ctk.CTkButton(
             button_row, 
-            text="Save Receipt", 
-            command=self.on_save_receipt, 
+            text="Generate Report", 
+            command=self.on_save_function_report, 
             state="disabled",
             width=button_width,
             height=button_height
@@ -833,7 +833,8 @@ class FunctionVisualizerApp:
             
         file_path = filedialog.asksaveasfilename(
             defaultextension=".png",
-            filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("PDF files", "*.pdf")]
+            filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("PDF files", "*.pdf")],
+            initialfile="DerivaPlot_Graph.png"
         )
         
         if file_path:
@@ -844,15 +845,16 @@ class FunctionVisualizerApp:
             except Exception as e:
                 messagebox.showerror("Save Error", f"Error saving image: {e}")
     
-    def on_save_receipt(self):
+    def on_save_function_report(self):
         """Save a receipt with function details and the graph."""
         if self.fig is None or not hasattr(self, 'current_data'):
-            messagebox.showerror("Error", "No data to save")
+            messagebox.showerror("Error", "No data to generate report")
             return
             
         receipt_path = filedialog.asksaveasfilename(
             defaultextension=".png", 
-            filetypes=[("PNG files", "*.png")]
+            filetypes=[("PNG files", "*.png")],
+            initialfile="DerivaPlot_Function_Analysis_Report.png"
         )
         if not receipt_path:
             return
@@ -875,7 +877,7 @@ class FunctionVisualizerApp:
                 font_title = ImageFont.load_default()
                 font_text = ImageFont.load_default()
 
-            draw.text((30, 30), "Function Visualizer Receipt", fill="black", font=font_title)
+            draw.text((30, 30), "DerivaPlot Function Analysis Report", fill="black", font=font_title)
 
             y_pos = 80
             for i, func_data in enumerate(self.current_data['functions']):
@@ -929,7 +931,7 @@ class FunctionVisualizerApp:
             messagebox.showinfo("Success", f"Receipt saved successfully to:\n{receipt_path}")
             
         except Exception as e:
-            messagebox.showerror("Save Error", f"Error saving receipt: {e}")
+            messagebox.showerror("Save Error", f"Error saving function report: {e}")
         finally:
             # temp file cleaner
             if temp_path and os.path.exists(temp_path):
