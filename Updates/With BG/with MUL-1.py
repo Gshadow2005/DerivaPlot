@@ -229,9 +229,28 @@ class FunctionVisualizerApp:
         self.functions_scroll_frame = ctk.CTkScrollableFrame(
             self.input_frame, 
             orientation="vertical", 
-            height=200  # Adjust height as needed
+            height=205  # Adjust height as needed
         )
         self.functions_scroll_frame.pack(fill="x", pady=3)
+        self.functions_list = []
+        for i in range(2, 8):  # Automatically add Func 2 to Func 7
+            function_row = ctk.CTkFrame(self.functions_scroll_frame)
+            function_row.pack(fill="x", pady=3)
+            
+            ctk.CTkLabel(function_row, text=f"Func {i}:", width=80).pack(side="left", padx=5)
+            entry_func = ctk.CTkEntry(function_row, width=240, placeholder_text="e.g., cos(x)")
+            entry_func.pack(side="left", padx=5, fill="x", expand=True)
+            
+            remove_btn = ctk.CTkButton(
+                function_row,
+                text="✕",
+                width=30,
+                height=28,
+                command=lambda fr=function_row, ef=entry_func: self.remove_function_field(fr, ef)
+            )
+            remove_btn.pack(side="right", padx=5)
+            
+            self.functions_list.append((function_row, entry_func))
 
         
         # Graph placeholder
