@@ -854,32 +854,16 @@ class FunctionVisualizerApp:
             defaultextension=".png", 
             filetypes=[("PNG files", "*.png")]
         )
-        
         if not receipt_path:
             return
-        
         temp_path = None
-
-        if hasattr(self, 'current_data') and 'critical_values' in self.current_data:
-            y_pos += 30
-            draw.text((30, y_pos), "Critical Values:", fill="black", font=font_text)
-            y_pos += 30
-            
-            for func_data in self.current_data['critical_values']:
-                cv_text = f"{func_data['expr']}: "
-                if func_data['critical_values']:
-                    cv_points = ", ".join([f"x={cv['x']:.2f}" for cv in func_data['critical_values']])
-                    cv_text += cv_points
-                else:
-                    cv_text += "No critical values"
-                
-                draw.text((30, y_pos), cv_text, fill="black", font=font_text)
-                y_pos += 30        
-
         try:
-            # Create receipt image with additional height for multiple functions
             function_count = len(self.current_data['functions'])
-            extra_height = max(0, (function_count - 1) * 30)  # Add 30px per additional function
+            extra_height = max(0, (function_count - 1) * 30) 
+
+            if 'critical_values' in self.current_data:
+                extra_height += len(self.current_data['critical_values']) * 30
+            
             receipt_width, receipt_height = 600, 630 + extra_height
             image = Image.new('RGB', (receipt_width, receipt_height), 'white')
             draw = ImageDraw.Draw(image)
@@ -890,24 +874,38 @@ class FunctionVisualizerApp:
             except:
                 font_title = ImageFont.load_default()
                 font_text = ImageFont.load_default()
-            
-            # Add header
+
             draw.text((30, 30), "Function Visualizer Receipt", fill="black", font=font_title)
-            
-            # List all functions
+
             y_pos = 80
             for i, func_data in enumerate(self.current_data['functions']):
                 func_label = f"Function {i+1}: " if i > 0 else "Function: "
                 draw.text((30, y_pos), f"{func_label}{func_data['expr']}", fill="black", font=font_text)
                 y_pos += 30
-            
-            # Add other details
+
             draw.text((30, y_pos), f"X Range: [{self.current_data['x_range'][0]}, {self.current_data['x_range'][1]}]", 
                     fill="black", font=font_text)
             y_pos += 30
-            
-            draw.text((30, y_pos), f"Derivative Order: {self.current_data['order']}", fill="black", font=font_text)
-            y_pos += 30
+
+            if 'order' in self.current_data:
+                draw.text((30, y_pos), f"Derivative Order: {self.current_data['order']}", fill="black", font=font_text)
+                y_pos += 30
+
+            if 'critical_values' in self.current_data:
+                y_pos += 10
+                draw.text((30, y_pos), "Critical Values:", fill="black", font=font_text)
+                y_pos += 30
+                
+                for func_data in self.current_data['critical_values']:
+                    cv_text = f"{func_data['expr']}: "
+                    if func_data['critical_values']:
+                        cv_points = ", ".join([f"x={cv['x']:.2f}" for cv in func_data['critical_values']])
+                        cv_text += cv_points
+                    else:
+                        cv_text += "No critical values"
+                    
+                    draw.text((30, y_pos), cv_text, fill="black", font=font_text)
+                    y_pos += 30
             
             draw.text((30, y_pos), f"Date: {np.datetime64('today')}", fill="black", font=font_text)
             y_pos += 30
@@ -916,8 +914,7 @@ class FunctionVisualizerApp:
             with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
                 temp_path = temp_file.name
                 self.fig.savefig(temp_path, dpi=150, bbox_inches='tight')
-            
-            # graph to receipt - position adjusted for multiple functions
+
             graph_img = Image.open(temp_path)
             graph_img = graph_img.resize((520, 380), Image.LANCZOS)
             image.paste(graph_img, (40, y_pos))
@@ -925,8 +922,7 @@ class FunctionVisualizerApp:
             # Footer
             footer_text = "Thank you for using DerivaPlot"
             draw.text((30, receipt_height - 30), footer_text, fill="black", font=font_text)
-            
-            # Save receipt
+
             image.save(receipt_path)
             
             self.status_var.set(f"Receipt saved to {os.path.basename(receipt_path)}")
