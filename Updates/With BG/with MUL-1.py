@@ -146,7 +146,10 @@ class FunctionVisualizerApp:
             text="Show Critical Values",
             command=self.on_show_critical_values,
             width=120,
-            height=28
+            height=28,
+            state="disabled", 
+            fg_color="#FF5A5A", 
+            hover_color="#E04A4A"
         )
         self.critical_values_button.pack(fill="x", pady=3, padx=10)
         
@@ -565,6 +568,7 @@ class FunctionVisualizerApp:
                 # Enable save buttons
                 self.btn_save.configure(state="normal")
                 self.btn_receipt.configure(state="normal")
+                self.critical_values_button.configure(state="normal")
 
                 self.btn_refresh.grid(row=0, column=4, padx=3, pady=5)
                 
@@ -765,6 +769,7 @@ class FunctionVisualizerApp:
         self.entry_xmax.delete(0, "end")
         self.entry_order.delete(0, "end")
         self.entry_order.insert(0, "1")
+        self.critical_values_button.configure(state="disabled")
         
         # Clear additional function fields
         for frame, _ in self.functions_list:
