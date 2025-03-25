@@ -219,10 +219,10 @@ class FunctionVisualizerApp:
 
         self.btn_refresh = ctk.CTkButton(
             button_row, 
-            text="↻ Refresh", 
+            text="↻", 
             command=self.on_refresh,
-            width=button_width,
-            height=button_height
+            width=30,
+            height=30
         )
 
         # Functions scroll frame
