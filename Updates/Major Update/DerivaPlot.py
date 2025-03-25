@@ -13,6 +13,7 @@ from scipy.integrate import quad
 class FunctionVisualizerApp:
     def __init__(self, root):
         self.root = root
+        self.fig = None
         self.root.geometry("1300x750")
         self.root.minsize(1300, 750)
         pygame.mixer.init()
@@ -505,7 +506,8 @@ class FunctionVisualizerApp:
         return np.array([quad(f, x_vals[0], x)[0] for x in x_vals])
         
     def on_plot(self):
-        """Handle the plot button click."""
+        if self.fig is not None:
+            plt.close(self.fig)
         try:
             is_valid, functions, x_range, order_val = self.validate_inputs()
             if not is_valid:
@@ -857,7 +859,8 @@ class FunctionVisualizerApp:
         self.status_var.set("Ready to plot")
 
     def create_empty_graph(self):
-        """Create an empty placeholder graph"""
+        if self.fig is not None:
+            plt.close(self.fig)
         if hasattr(self, 'canvas'):
             self.canvas.get_tk_widget().destroy()
         if hasattr(self, 'toolbar'):
@@ -1005,7 +1008,8 @@ class FunctionVisualizerApp:
                 os.remove(temp_path)
 
     def on_refresh(self):
-        """Update the plot with current inputs without clearing them."""
+        if self.fig is not None:
+            plt.close(self.fig)
         try:
             if hasattr(self, 'canvas'):
                 self.canvas.get_tk_widget().destroy()
