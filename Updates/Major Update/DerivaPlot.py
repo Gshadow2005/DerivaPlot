@@ -1,5 +1,5 @@
 import os
-import pygame
+import pygame # type: ignore
 import tempfile
 import numpy as np
 import sympy as sp
