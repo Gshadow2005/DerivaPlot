@@ -163,16 +163,6 @@ class FunctionVisualizerApp:
         self.entry_xmax = ctk.CTkEntry(range_row, width=80, placeholder_text="Max")
         self.entry_xmax.pack(side="left", padx=5)
 
-        # Help button
-        self.help_button = ctk.CTkButton(
-            self.top_bar, 
-            text="❓ Help",
-            width=80,
-            height=28,
-            command=self.show_help
-        )
-        self.help_button.pack(side="right", padx=5, pady=5)
-
         # Derivative
         ctk.CTkLabel(range_row, text="Derivative:", width=80).pack(side="left", padx=(15, 5))
         self.entry_order = ctk.CTkEntry(range_row, width=50, placeholder_text="Order")
@@ -196,24 +186,6 @@ class FunctionVisualizerApp:
         )
         self.btn_plot.grid(row=0, column=1, padx=3, pady=5)
         
-        self.btn_save = ctk.CTkButton(
-            button_row, 
-            text="Save Image", 
-            command=self.on_save_image, 
-            state="disabled",
-            width=button_width,
-            height=button_height
-        )
-        self.btn_save.grid(row=0, column=2, padx=3, pady=5)
-        
-        self.btn_receipt = ctk.CTkButton(
-            button_row, 
-            text="Generate Report", 
-            command=self.on_save_function_report, 
-            state="disabled",
-            width=button_width,
-            height=button_height
-        )
         self.btn_receipt.grid(row=0, column=3, padx=3, pady=5)
 
         self.btn_refresh = ctk.CTkButton(
@@ -318,106 +290,12 @@ class FunctionVisualizerApp:
             
             self.canvas.draw()
 
-    def show_help(self):
-        text_color = "white" if self.appearance_mode == "dark" else "black"
-        
-        help_window = ctk.CTkToplevel(self.root)
-        help_window.title("DerivaPlot Help")
-        help_window.geometry("500x400")
-
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = (screen_width - 500) // 2
-        y = (screen_height - 400) // 2
-        help_window.geometry(f'500x400+{x}+{y}')
-
-        help_window.grab_set()
-
-        help_frame = ctk.CTkFrame(help_window)
-        help_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        help_text = ctk.CTkTextbox(help_frame, wrap="word")
-        help_text.pack(fill="both", expand=True, padx=5, pady=5)
-
-        help_text.configure(text_color=text_color)
-
-        help_content = """DerivaPlot - Function Visualization Tool
-
-    How to use:
-    1. Enter a mathematical function using x as the variable
-    Examples: sin(x), x**2, cos(x) + 0.5*x
-
-    2. Set the X Range for plotting (min and max values)
-    Example: -10 to 10
-
-    3. Set the derivative order (1 for first derivative, 2 for second, etc.)
-
-    4. Additional Features:
-    - Click "+ Add Function" to plot multiple functions simultaneously
-    - Use the "Show Critical Values" button to identify key points on the function
-    - Toggle between light and dark themes for comfortable viewing
-
-    5. Click "Plot Functions" to visualize:
-    - The original function
-    - The specified derivative
-    - The integral of the function
-
-    6. Use the navigation toolbar to:
-    - Zoom in/out
-    - Pan the graph
-    - Save the plot directly
-
-    7. Additional Buttons:
-    - "Save Image": Export the graph as PNG, JPEG, or PDF
-    - "Generate Report": Create a comprehensive function analysis report
-    - "Refresh": Update the plot without clearing inputs
-    - "Reset": Clear all inputs and reset the graph
-
-    Supported Mathematical Functions:
-    - Basic Operations: +, -, *, /, **
-    - Trigonometric: sin, cos, tan
-    - Exponential/Logarithmic: exp, log, sqrt
-    - Constants: pi, e
-
-    Tips:
-    - Use parentheses for complex functions to ensure correct order of operations
-    - The derivative is calculated numerically, so very steep functions might show approximation errors
-    - Experiment with multiple functions and derivative orders
-    - Critical values help identify important points like local maxima, minima, and inflection points
-
-    Keyboard Shortcuts (in Navigation Toolbar):
-    - Left-click and drag: Pan
-    - Right-click and drag: Zoom
-    - Scroll wheel: Zoom in/out
-
-    **Project Team:**  
-    📌 Anino, Glenn  
-    📌 Antonio, Den  
-    📌 Casia, Jaybird  
-    📌 Espina, Cyril  
-    📌 Flores, Sophia  
-    📌 Lacanaria, Lorenz  
-
-    Need Help? Check our GitHub repository for updates and support. 
-    """
-        
-        help_text.insert("1.0", help_content)
-        help_text.configure(state="disabled") 
-
-        close_button = ctk.CTkButton(
-            help_window, 
-            text="Close", 
-            command=help_window.destroy
-        )
-        close_button.pack(pady=10)
-        
     def validate_inputs(self):
         main_expr = self.entry_func.get().strip()
         x_min = self.entry_xmin.get().strip()
         x_max = self.entry_xmax.get().strip()
         order = self.entry_order.get().strip()
-        
-        # Check for empty fields
+
         if not main_expr:
             messagebox.showerror("Input Error", "Main function expression cannot be empty")
             return False, None, None, None
@@ -885,115 +763,7 @@ class FunctionVisualizerApp:
         self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
         self.toolbar.update()
     
-    def on_save_image(self):
-        if self.fig is None:
-            messagebox.showerror("Error", "No plot to save")
-            return
-            
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".png",
-            filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("PDF files", "*.pdf")],
-            initialfile="DerivaPlot_Graph.png"
-        )
-        
-        if file_path:
-            try:
-                self.fig.savefig(file_path, dpi=300, bbox_inches='tight')
-                self.status_var.set(f"Image saved to {os.path.basename(file_path)}")
-                messagebox.showinfo("Success", f"Image saved successfully to:\n{file_path}")
-            except Exception as e:
-                messagebox.showerror("Save Error", f"Error saving image: {e}")
-    
-    def on_save_function_report(self):
-        if self.fig is None or not hasattr(self, 'current_data'):
-            messagebox.showerror("Error", "No data to generate report")
-            return
-            
-        receipt_path = filedialog.asksaveasfilename(
-            defaultextension=".pdf", 
-            filetypes=[("PDF files", "*.pdf"), ("PNG files", "*.png"), ("JPEG files", "*.jpg")],
-            initialfile="DerivaPlot_Function_Analysis_Report.pdf"
-        )
-        if not receipt_path:
-            return
-        temp_path = None
-        try:
-            function_count = len(self.current_data['functions'])
-            extra_height = max(0, (function_count - 1) * 30) 
-
-            if 'critical_values' in self.current_data:
-                extra_height += len(self.current_data['critical_values']) * 30
-            
-            receipt_width, receipt_height = 600, 630 + extra_height
-            image = Image.new('RGB', (receipt_width, receipt_height), 'white')
-            draw = ImageDraw.Draw(image)
-
-            try:
-                font_title = ImageFont.truetype("arial", 24)
-                font_text = ImageFont.truetype("arial", 16)
-            except:
-                font_title = ImageFont.load_default()
-                font_text = ImageFont.load_default()
-
-            draw.text((30, 30), "DerivaPlot Function Analysis Report", fill="black", font=font_title)
-
-            y_pos = 80
-            for i, func_data in enumerate(self.current_data['functions']):
-                func_label = f"Function {i+1}: " if i > 0 else "Function: "
-                draw.text((30, y_pos), f"{func_label}{func_data['expr']}", fill="black", font=font_text)
-                y_pos += 30
-
-            draw.text((30, y_pos), f"X Range: [{self.current_data['x_range'][0]}, {self.current_data['x_range'][1]}]", 
-                    fill="black", font=font_text)
-            y_pos += 30
-
-            if 'order' in self.current_data:
-                draw.text((30, y_pos), f"Derivative Order: {self.current_data['order']}", fill="black", font=font_text)
-                y_pos += 30
-
-            if 'critical_values' in self.current_data:
-                y_pos += 10
-                draw.text((30, y_pos), "Critical Values:", fill="black", font=font_text)
-                y_pos += 30
-                
-                for func_data in self.current_data['critical_values']:
-                    cv_text = f"{func_data['expr']}: "
-                    if func_data['critical_values']:
-                        cv_points = ", ".join([f"x={cv['x']:.2f}" for cv in func_data['critical_values']])
-                        cv_text += cv_points
-                    else:
-                        cv_text += "No critical values"
-                    
-                    draw.text((30, y_pos), cv_text, fill="black", font=font_text)
-                    y_pos += 30
-            
-            draw.text((30, y_pos), f"Date: {np.datetime64('today')}", fill="black", font=font_text)
-            y_pos += 30
-            
-            # temp file
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
-                temp_path = temp_file.name
-                self.fig.savefig(temp_path, dpi=150, bbox_inches='tight')
-
-            graph_img = Image.open(temp_path)
-            graph_img = graph_img.resize((520, 380), Image.LANCZOS)
-            image.paste(graph_img, (40, y_pos))
-            
-            # Footer
-            footer_text = "Thank you for using DerivaPlot"
-            draw.text((30, receipt_height - 30), footer_text, fill="black", font=font_text)
-
-            image.save(receipt_path)
-            
-            self.status_var.set(f"Report saved to {os.path.basename(receipt_path)}")
-            messagebox.showinfo("Success", f"Report saved successfully to:\n{receipt_path}")
-            
-        except Exception as e:
-            messagebox.showerror("Save Error", f"Error saving function report: {e}")
-        finally:
-            # temp file cleaner
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
+ 
 
     def on_refresh(self):
         if self.fig is not None:
@@ -1118,12 +888,6 @@ class FunctionVisualizerApp:
         plt.close('all')
         pygame.mixer.music.stop() 
         pygame.mixer.quit()  
-        self.root.destroy()
-    
-    def on_closing(self):
-        for after_id in self.root.tk.call('after', 'info'):
-            self.root.after_cancel(after_id)
-        plt.close('all') 
         self.root.destroy()
 
 def main():

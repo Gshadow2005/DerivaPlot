@@ -1,5 +1,4 @@
 import os
-import pygame # type: ignore
 import tempfile
 import numpy as np
 import sympy as sp
@@ -9,14 +8,16 @@ from tkinter import filedialog, messagebox
 from PIL import Image, ImageDraw, ImageFont
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from scipy.integrate import quad
+from scipy.optimize import brentq
+
+# On this Update: Attempting to change its function to handle multiple functions
 
 class FunctionVisualizerApp:
     def __init__(self, root):
         self.root = root
-        self.fig = None
         self.root.geometry("1300x750")
+
         self.root.minsize(1300, 750)
-        pygame.mixer.init()
 
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -37,17 +38,6 @@ class FunctionVisualizerApp:
         except Exception as e:
             print(f"Error setting icon: {e}")
 
-        try:
-            music_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bg-music.mp3")
-            if os.path.exists(music_path):
-                pygame.mixer.music.load(music_path)
-                pygame.mixer.music.set_volume(0.1)  # volume 10%
-                pygame.mixer.music.play(-1) 
-            else:
-                print(f"Music file not found at: {music_path}")
-        except Exception as e:
-            print(f"Error loading background music: {e}")   
-
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # DEFAULT THEME
@@ -65,6 +55,7 @@ class FunctionVisualizerApp:
         self.create_widgets()
 
     def add_function_field(self):
+        """Add a new function input field"""
         function_row = ctk.CTkFrame(self.functions_scroll_frame)
         function_row.pack(fill="x", pady=3)
         
@@ -84,6 +75,7 @@ class FunctionVisualizerApp:
         self.functions_list.append((function_row, entry_func))
 
     def remove_function_field(self, frame, entry):
+        """Remove a function input field"""
         idx = None
         for i, (fr, ent) in enumerate(self.functions_list):
             if fr == frame and ent == entry:
@@ -140,17 +132,14 @@ class FunctionVisualizerApp:
         )
         self.add_function_button.pack(fill="x", pady=3, padx=10)
 
-        self.critical_values_button = ctk.CTkButton(
+        self.btn_find_roots = ctk.CTkButton(
             self.input_frame,
-            text="Show Critical Values",
-            command=self.on_show_critical_values,
+            text="🔍 Find Roots",
+            command=self.find_roots,
             width=120,
-            height=28,
-            state="disabled", 
-            fg_color="#FF5A5A", 
-            hover_color="#E04A4A"
+            height=28
         )
-        self.critical_values_button.pack(fill="x", pady=3, padx=10)
+        self.btn_find_roots.pack(fill="x", pady=3, padx=10)
         
         # Range input
         range_row = ctk.CTkFrame(self.input_frame)
@@ -208,8 +197,8 @@ class FunctionVisualizerApp:
         
         self.btn_receipt = ctk.CTkButton(
             button_row, 
-            text="Generate Report", 
-            command=self.on_save_function_report, 
+            text="Save Receipt", 
+            command=self.on_save_receipt, 
             state="disabled",
             width=button_width,
             height=button_height
@@ -218,38 +207,19 @@ class FunctionVisualizerApp:
 
         self.btn_refresh = ctk.CTkButton(
             button_row, 
-            text="↻", 
+            text="↻ Refresh", 
             command=self.on_refresh,
-            width=30,
-            height=30
+            width=button_width,
+            height=button_height
         )
 
         # Functions scroll frame
         self.functions_scroll_frame = ctk.CTkScrollableFrame(
             self.input_frame, 
             orientation="vertical", 
-            height=205  # Adjust height as needed
+            height=200  # Adjust height as needed
         )
         self.functions_scroll_frame.pack(fill="x", pady=3)
-        self.functions_list = []
-        for i in range(2, 8):  # Automatically add Func 2 to Func 7
-            function_row = ctk.CTkFrame(self.functions_scroll_frame)
-            function_row.pack(fill="x", pady=3)
-            
-            ctk.CTkLabel(function_row, text=f"Func {i}:", width=80).pack(side="left", padx=5)
-            entry_func = ctk.CTkEntry(function_row, width=240, placeholder_text="e.g., cos(x)")
-            entry_func.pack(side="left", padx=5, fill="x", expand=True)
-            
-            remove_btn = ctk.CTkButton(
-                function_row,
-                text="✕",
-                width=30,
-                height=28,
-                command=lambda fr=function_row, ef=entry_func: self.remove_function_field(fr, ef)
-            )
-            remove_btn.pack(side="right", padx=5)
-            
-            self.functions_list.append((function_row, entry_func))
 
         
         # Graph placeholder
@@ -278,6 +248,7 @@ class FunctionVisualizerApp:
         self.create_empty_graph()
     
     def toggle_theme(self):
+        """Toggle between light and dark mode"""
         if self.appearance_mode == "dark":
             self.appearance_mode = "light"
             ctk.set_appearance_mode("light")
@@ -290,8 +261,109 @@ class FunctionVisualizerApp:
         # Update plot colors if it exists
         if self.fig is not None:
             self.update_plot_theme()
+
+    def find_roots(self):
+        """Find roots for the entered functions"""
+        try:
+            is_valid, functions, x_range, _ = self.validate_inputs()
+            if not is_valid:
+                return
+
+            roots_found = []
+            
+            for expr, f in functions:
+                try:
+                    # Multiple root-finding attempts across the range
+                    x_min, x_max = x_range
+                    roots = []
+                    
+                    # Divide the range into smaller intervals
+                    num_intervals = 20
+                    interval_width = (x_max - x_min) / num_intervals
+                    
+                    for i in range(num_intervals):
+                        sub_min = x_min + i * interval_width
+                        sub_max = sub_min + interval_width
+                        
+                        try:
+                            # Use Brent's method to find roots
+                            root = brentq(f, sub_min, sub_max)
+                            roots.append(root)
+                        except ValueError:
+                            # No root in this interval
+                            continue
+                    
+                    # Remove duplicate roots (with small tolerance)
+                    unique_roots = []
+                    for root in roots:
+                        if not any(abs(root - existing_root) < 1e-6 for existing_root in unique_roots):
+                            unique_roots.append(root)
+                    
+                    roots_found.append({
+                        "expression": expr,
+                        "roots": unique_roots
+                    })
+                
+                except Exception as e:
+                    messagebox.showwarning("Root Finding Warning", 
+                        f"Could not find roots for function {expr}: {e}")
+            
+            # Display roots in a popup
+            self.display_roots(roots_found)
+            
+        except Exception as e:
+            messagebox.showerror("Root Finding Error", str(e))
+
+    def display_roots(self, roots_found):
+        """Display roots in a custom popup window"""
+        root_window = ctk.CTkToplevel(self.root)
+        root_window.title("Root Finding Results")
+        root_window.geometry("500x400")
+
+        # Center the window
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width - 500) // 2
+        y = (screen_height - 400) // 2
+        root_window.geometry(f'500x400+{x}+{y}')
+
+        root_window.grab_set()
+
+        # Frame for roots
+        roots_frame = ctk.CTkScrollableFrame(root_window)
+        roots_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Title
+        ctk.CTkLabel(roots_frame, text="Root Finding Results", 
+                    font=("Arial", 16, "bold")).pack(pady=(0, 10))
+
+        if not roots_found:
+            ctk.CTkLabel(roots_frame, text="No roots found").pack()
+        
+        for result in roots_found:
+            func_frame = ctk.CTkFrame(roots_frame)
+            func_frame.pack(fill="x", pady=5)
+
+            # Function expression
+            ctk.CTkLabel(func_frame, text=f"Function: {result['expression']}", 
+                        font=("Arial", 12, "bold")).pack(anchor="w")
+
+            # Roots
+            if result['roots']:
+                for root in result['roots']:
+                    ctk.CTkLabel(func_frame, 
+                                text=f"Root: x = {root:.6f}").pack(anchor="w")
+            else:
+                ctk.CTkLabel(func_frame, text="No roots found in the given range").pack(anchor="w")
+
+        # Close button
+        close_button = ctk.CTkButton(root_window, text="Close", 
+                                    command=root_window.destroy)
+        close_button.pack(pady=10)
+
     
     def update_plot_theme(self):
+        """Update the plot theme to match the app theme"""
         if self.fig is not None:
             background_color = "#242424" if self.appearance_mode == "dark" else "white"
             text_color = "white" if self.appearance_mode == "dark" else "black"
@@ -319,6 +391,7 @@ class FunctionVisualizerApp:
             self.canvas.draw()
 
     def show_help(self):
+        """Display a help popup with information about the application"""
         text_color = "white" if self.appearance_mode == "dark" else "black"
         
         help_window = ctk.CTkToplevel(self.root)
@@ -352,53 +425,38 @@ class FunctionVisualizerApp:
 
     3. Set the derivative order (1 for first derivative, 2 for second, etc.)
 
-    4. Additional Features:
-    - Click "+ Add Function" to plot multiple functions simultaneously
-    - Use the "Show Critical Values" button to identify key points on the function
-    - Toggle between light and dark themes for comfortable viewing
-
-    5. Click "Plot Functions" to visualize:
+    4. Click "Plot Functions" to visualize:
     - The original function
     - The specified derivative
     - The integral of the function
 
-    6. Use the navigation toolbar to:
-    - Zoom in/out
-    - Pan the graph
-    - Save the plot directly
+    5. Use the navigation toolbar to zoom, pan, or save the plot
 
-    7. Additional Buttons:
-    - "Save Image": Export the graph as PNG, JPEG, or PDF
-    - "Generate Report": Create a comprehensive function analysis report
-    - "Refresh": Update the plot without clearing inputs
-    - "Reset": Clear all inputs and reset the graph
+    6. Click "Save Image" to export just the graph
+    
+    7. Click "Save Receipt" to create a complete report with the graph
+    and function details
 
-    Supported Mathematical Functions:
-    - Basic Operations: +, -, *, /, **
+    Supported mathematical functions:
+    - Basic: +, -, *, /, **
     - Trigonometric: sin, cos, tan
-    - Exponential/Logarithmic: exp, log, sqrt
+    - Others: exp, log, sqrt
     - Constants: pi, e
 
     Tips:
-    - Use parentheses for complex functions to ensure correct order of operations
-    - The derivative is calculated numerically, so very steep functions might show approximation errors
-    - Experiment with multiple functions and derivative orders
-    - Critical values help identify important points like local maxima, minima, and inflection points
 
-    Keyboard Shortcuts (in Navigation Toolbar):
-    - Left-click and drag: Pan
-    - Right-click and drag: Zoom
-    - Scroll wheel: Zoom in/out
-
-    **Project Team:**  
+    For complex functions, use parentheses to ensure proper order of operations
+    The derivative is calculated numerically, so very steep functions might show
+    some approximation errors
+    Toggle between light and dark themes using the theme button
+    
+    **Group Members:**  
     📌 Anino, Glenn  
     📌 Antonio, Den  
     📌 Casia, Jaybird  
     📌 Espina, Cyril  
     📌 Flores, Sophia  
     📌 Lacanaria, Lorenz  
-
-    Need Help? Check our GitHub repository for updates and support. 
     """
         
         help_text.insert("1.0", help_content)
@@ -412,6 +470,7 @@ class FunctionVisualizerApp:
         close_button.pack(pady=10)
         
     def validate_inputs(self):
+        """Validate all user inputs and check for empty fields."""
         main_expr = self.entry_func.get().strip()
         x_min = self.entry_xmin.get().strip()
         x_max = self.entry_xmax.get().strip()
@@ -483,6 +542,7 @@ class FunctionVisualizerApp:
             return False, None, None, None
             
     def numerical_derivative(self, f, x_vals, order=1):
+        """Compute the numerical derivative of a function."""
         if order == 1:
             dx = x_vals[1] - x_vals[0]
             return np.gradient(f(x_vals), dx)
@@ -495,11 +555,11 @@ class FunctionVisualizerApp:
             return result
 
     def numerical_integral(self, f, x_vals):
+        """Compute the numerical integral of a function."""
         return np.array([quad(f, x_vals[0], x)[0] for x in x_vals])
         
     def on_plot(self):
-        if self.fig is not None:
-            plt.close(self.fig)
+        """Handle the plot button click."""
         try:
             is_valid, functions, x_range, order_val = self.validate_inputs()
             if not is_valid:
@@ -537,18 +597,8 @@ class FunctionVisualizerApp:
                 
                 # Plot each function with its derivative and integral
                 for i, (expr, f) in enumerate(functions):
-                    # Determine color palette
-                    if len(functions) == 1:
-                        # For single function, use distinct colors
-                        base_color = colors[0]
-                        derivative_color = colors[1]
-                        integral_color = colors[2]
-                    else:
-                        # For multiple functions, use consistent color per function
-                        color_idx = i % len(colors)
-                        base_color = colors[color_idx]
-                        derivative_color = base_color
-                        integral_color = base_color
+                    color_idx = i % len(colors)
+                    base_color = colors[color_idx]
                     
                     # Calculate function, derivative and integral
                     y_vals = f(x_vals)
@@ -559,9 +609,39 @@ class FunctionVisualizerApp:
                     ax.plot(x_vals, y_vals, label=f'Function: {expr}', 
                         color=base_color, linewidth=2)
                     ax.plot(x_vals, dydx_vals, label=f'{order_val}-Order Derivative of {expr}', 
-                        color=derivative_color, linestyle='dashed', linewidth=1.5)
+                        color=base_color, linestyle='dashed', linewidth=1.5)
                     ax.plot(x_vals, integral_vals, label=f'Integral of {expr}', 
-                        color=integral_color, linestyle='dotted', linewidth=1.5)
+                        color=base_color, linestyle='dotted', linewidth=1.5)
+                    
+                    try:
+                        # Find roots for this specific function
+                        roots = []
+                        num_intervals = 20
+                        x_min, x_max = x_range
+                        interval_width = (x_max - x_min) / num_intervals
+                        
+                        for i in range(num_intervals):
+                            sub_min = x_min + i * interval_width
+                            sub_max = sub_min + interval_width
+                            
+                            try:
+                                root = brentq(f, sub_min, sub_max)
+                                roots.append(root)
+                            except ValueError:
+                                continue
+                        
+                        # Remove duplicate roots
+                        unique_roots = []
+                        for root in roots:
+                            if not any(abs(root - existing_root) < 1e-6 for existing_root in unique_roots):
+                                unique_roots.append(root)
+                        
+                        # Visualize roots on the plot
+                        for root in unique_roots:
+                            ax.plot(root, f(root), 'ro', markersize=8)  # Red dot at root
+                            ax.axvline(x=root, color='r', linestyle='--', alpha=0.5)
+                    except Exception as e:
+                        print(f"Root visualization error for {expr}: {e}")                    
                     
                     # Store data for later use
                     all_functions_data.append({
@@ -606,7 +686,6 @@ class FunctionVisualizerApp:
                 # Enable save buttons
                 self.btn_save.configure(state="normal")
                 self.btn_receipt.configure(state="normal")
-                self.critical_values_button.configure(state="normal")
 
                 self.btn_refresh.grid(row=0, column=4, padx=3, pady=5)
                 
@@ -635,200 +714,19 @@ class FunctionVisualizerApp:
             self.create_empty_graph()
             self.status_var.set("Error occurred")
 
-    def find_critical_values(self, function, x_range):
-        try:
-            x = sp.Symbol('x')
-            expr = sp.sympify(function, locals={"sin": sp.sin, "cos": sp.cos, "tan": sp.tan, 
-                                                "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt,
-                                                "pi": sp.pi, "e": sp.E})
-            
-            # First derivative
-            derivative = sp.diff(expr, x)
-            
-            # Find derivative roots within the range
-            critical_points = sp.solve(derivative, x)
-            
-            # Filter critical points within the specified range
-            valid_critical_points = [
-                point for point in critical_points 
-                if x_range[0] <= float(point) <= x_range[1] and point.is_real
-            ]
-            
-            # If no critical points found, return empty list
-            if not valid_critical_points:
-                return []
-            
-            # Evaluate function values at critical points
-            critical_values = []
-            for point in valid_critical_points:
-                point_val = float(point)
-                func_val = float(expr.subs(x, point))
-                derivative_val = float(derivative.subs(x, point))
-                
-                critical_values.append({
-                    'x': point_val,
-                    'y': func_val,
-                    'derivative': derivative_val
-                })
-            
-            return critical_values
-        except Exception as e:
-            messagebox.showerror("Critical Value Error", f"Error calculating critical values: {e}")
-            return []
-        
-    def on_show_critical_values(self):
-
-        try:
-            is_valid, functions, x_range, order_val = self.validate_inputs()
-            if not is_valid:
-                self.create_empty_graph()
-                return
-        
-            if hasattr(self, 'canvas'):
-                self.canvas.get_tk_widget().destroy()
-            if hasattr(self, 'toolbar'):
-                self.toolbar.destroy()
-            if hasattr(self, 'toolbar_frame'):
-                self.toolbar_frame.destroy()
-
-            self.status_var.set("Calculating critical values...")
-            self.root.update()
-            
-            # Create plot
-            x_vals = np.linspace(x_range[0], x_range[1], 400)
-            
-            try:
-                # Create figure
-                plt.style.use('default')
-                self.fig, ax = plt.subplots(figsize=(8, 5))
-                
-                # Set colors based on theme
-                background_color = "#242424" if self.appearance_mode == "dark" else "white"
-                text_color = "white" if self.appearance_mode == "dark" else "black"
-                self.fig.patch.set_facecolor(background_color)
-                ax.set_facecolor(background_color)
-                
-                # Color cycle for multiple functions
-                colors = plt.cm.tab10.colors
-                
-                critical_values_data = []
-                
-                # Plot each function with its critical values
-                for i, (expr, f) in enumerate(functions):
-                    color_idx = i % len(colors)
-                    base_color = colors[color_idx]
-                    
-                    # Calculate function values
-                    y_vals = f(x_vals)
-                    
-                    # Find critical values
-                    critical_values = self.find_critical_values(expr, x_range)
-                    
-                    # Plot function
-                    ax.plot(x_vals, y_vals, label=f'Function: {expr}', 
-                        color=base_color, linewidth=2)
-                    
-                    # Plot critical points
-                    if critical_values:
-                        cv_x = [point['x'] for point in critical_values]
-                        cv_y = [point['y'] for point in critical_values]
-                        ax.scatter(cv_x, cv_y, color='red', s=100, zorder=5, 
-                                label=f'Critical Points of {expr}')
-                        
-                        # Annotate critical points
-                        for point in critical_values:
-                            ax.annotate(
-                                f"x={point['x']:.2f}\ny={point['y']:.2f}\nf'={point['derivative']:.2f}", 
-                                (point['x'], point['y']), 
-                                xytext=(10, 10),
-                                textcoords='offset points',
-                                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
-                                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0')
-                            )
-                    
-                    critical_values_data.append({
-                        "expr": expr,
-                        "critical_values": critical_values
-                    })
-                
-                # Set labels and appearance
-                ax.set_xlabel('x', color=text_color)
-                ax.set_ylabel('y', color=text_color)
-                ax.set_title('Functions with Critical Values', color=text_color)
-                ax.tick_params(colors=text_color)
-                for spine in ax.spines.values():
-                    spine.set_edgecolor(text_color)
-                
-                # Update legend
-                legend = ax.legend()
-                if legend is not None:
-                    frame = legend.get_frame()
-                    frame.set_facecolor(background_color)
-                    frame.set_edgecolor(text_color)
-                    for text in legend.get_texts():
-                        text.set_color(text_color)
-                        
-                ax.grid(True, alpha=0.3)
-                plt.tight_layout()
-                
-                # Display in UI
-                self.canvas = FigureCanvasTkAgg(self.fig, master=self.canvas_frame)
-                self.canvas.draw()
-                self.canvas.get_tk_widget().pack(fill="both", expand=True)
-                
-                # navigation toolbar
-                self.toolbar_frame = ctk.CTkFrame(self.canvas_frame)
-                self.toolbar_frame.pack(side="bottom", fill="x")
-                self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
-                self.toolbar.update()
-                
-                # Store data for receipt
-                self.current_data = {
-                    "functions": [{"expr": expr} for expr, _ in functions],
-                    "x_range": x_range,
-                    "critical_values": critical_values_data
-                }
-                
-                self.status_var.set("Critical values plotted successfully")
-            except Exception as e:
-                messagebox.showerror("Calculation Error", f"Error calculating critical values: {e}")
-                self.status_var.set("Error in calculation")
-                
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
-            self.create_empty_graph()
-            self.status_var.set("Error occurred")
-
     def on_reset_plot(self):
+        """Reset the plot and input fields."""
+        # Clear input fields
         self.entry_func.delete(0, "end")
         self.entry_xmin.delete(0, "end")
         self.entry_xmax.delete(0, "end")
         self.entry_order.delete(0, "end")
         self.entry_order.insert(0, "1")
-        self.critical_values_button.configure(state="disabled")
         
         # Clear additional function fields
         for frame, _ in self.functions_list:
             frame.destroy()
         self.functions_list.clear()
-
-        for i in range(2, 8):  # Recreate Func 2 to Func 7
-            function_row = ctk.CTkFrame(self.functions_scroll_frame)
-            function_row.pack(fill="x", pady=3)
-            
-            ctk.CTkLabel(function_row, text=f"Func {i}:", width=80).pack(side="left", padx=5)
-            entry_func = ctk.CTkEntry(function_row, width=240, placeholder_text="e.g., cos(x)")
-            entry_func.pack(side="left", padx=5, fill="x", expand=True)
-            
-            remove_btn = ctk.CTkButton(
-                function_row,
-                text="✕",
-                width=30,
-                height=28,
-                command=lambda fr=function_row, ef=entry_func: self.remove_function_field(fr, ef)
-            )
-            remove_btn.pack(side="right", padx=5)
-            self.functions_list.append((function_row, entry_func))
         
         self.create_empty_graph()
         
@@ -849,8 +747,7 @@ class FunctionVisualizerApp:
         self.status_var.set("Ready to plot")
 
     def create_empty_graph(self):
-        if self.fig is not None:
-            plt.close(self.fig)
+        """Create an empty placeholder graph"""
         if hasattr(self, 'canvas'):
             self.canvas.get_tk_widget().destroy()
         if hasattr(self, 'toolbar'):
@@ -886,14 +783,14 @@ class FunctionVisualizerApp:
         self.toolbar.update()
     
     def on_save_image(self):
+        """Save the current plot as an image."""
         if self.fig is None:
             messagebox.showerror("Error", "No plot to save")
             return
             
         file_path = filedialog.asksaveasfilename(
             defaultextension=".png",
-            filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("PDF files", "*.pdf")],
-            initialfile="DerivaPlot_Graph.png"
+            filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("PDF files", "*.pdf")]
         )
         
         if file_path:
@@ -904,26 +801,26 @@ class FunctionVisualizerApp:
             except Exception as e:
                 messagebox.showerror("Save Error", f"Error saving image: {e}")
     
-    def on_save_function_report(self):
+    def on_save_receipt(self):
+        """Save a receipt with function details and the graph."""
         if self.fig is None or not hasattr(self, 'current_data'):
-            messagebox.showerror("Error", "No data to generate report")
+            messagebox.showerror("Error", "No data to save")
             return
             
         receipt_path = filedialog.asksaveasfilename(
-            defaultextension=".pdf", 
-            filetypes=[("PDF files", "*.pdf"), ("PNG files", "*.png"), ("JPEG files", "*.jpg")],
-            initialfile="DerivaPlot_Function_Analysis_Report.pdf"
+            defaultextension=".png", 
+            filetypes=[("PNG files", "*.png")]
         )
+        
         if not receipt_path:
             return
+        
         temp_path = None
-        try:
-            function_count = len(self.current_data['functions'])
-            extra_height = max(0, (function_count - 1) * 30) 
 
-            if 'critical_values' in self.current_data:
-                extra_height += len(self.current_data['critical_values']) * 30
-            
+        try:
+            # Create receipt image with additional height for multiple functions
+            function_count = len(self.current_data['functions'])
+            extra_height = max(0, (function_count - 1) * 30)  # Add 30px per additional function
             receipt_width, receipt_height = 600, 630 + extra_height
             image = Image.new('RGB', (receipt_width, receipt_height), 'white')
             draw = ImageDraw.Draw(image)
@@ -934,38 +831,24 @@ class FunctionVisualizerApp:
             except:
                 font_title = ImageFont.load_default()
                 font_text = ImageFont.load_default()
-
-            draw.text((30, 30), "DerivaPlot Function Analysis Report", fill="black", font=font_title)
-
+            
+            # Add header
+            draw.text((30, 30), "Function Visualizer Receipt", fill="black", font=font_title)
+            
+            # List all functions
             y_pos = 80
             for i, func_data in enumerate(self.current_data['functions']):
                 func_label = f"Function {i+1}: " if i > 0 else "Function: "
                 draw.text((30, y_pos), f"{func_label}{func_data['expr']}", fill="black", font=font_text)
                 y_pos += 30
-
+            
+            # Add other details
             draw.text((30, y_pos), f"X Range: [{self.current_data['x_range'][0]}, {self.current_data['x_range'][1]}]", 
                     fill="black", font=font_text)
             y_pos += 30
-
-            if 'order' in self.current_data:
-                draw.text((30, y_pos), f"Derivative Order: {self.current_data['order']}", fill="black", font=font_text)
-                y_pos += 30
-
-            if 'critical_values' in self.current_data:
-                y_pos += 10
-                draw.text((30, y_pos), "Critical Values:", fill="black", font=font_text)
-                y_pos += 30
-                
-                for func_data in self.current_data['critical_values']:
-                    cv_text = f"{func_data['expr']}: "
-                    if func_data['critical_values']:
-                        cv_points = ", ".join([f"x={cv['x']:.2f}" for cv in func_data['critical_values']])
-                        cv_text += cv_points
-                    else:
-                        cv_text += "No critical values"
-                    
-                    draw.text((30, y_pos), cv_text, fill="black", font=font_text)
-                    y_pos += 30
+            
+            draw.text((30, y_pos), f"Derivative Order: {self.current_data['order']}", fill="black", font=font_text)
+            y_pos += 30
             
             draw.text((30, y_pos), f"Date: {np.datetime64('today')}", fill="black", font=font_text)
             y_pos += 30
@@ -974,7 +857,8 @@ class FunctionVisualizerApp:
             with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
                 temp_path = temp_file.name
                 self.fig.savefig(temp_path, dpi=150, bbox_inches='tight')
-
+            
+            # graph to receipt - position adjusted for multiple functions
             graph_img = Image.open(temp_path)
             graph_img = graph_img.resize((520, 380), Image.LANCZOS)
             image.paste(graph_img, (40, y_pos))
@@ -982,22 +866,22 @@ class FunctionVisualizerApp:
             # Footer
             footer_text = "Thank you for using DerivaPlot"
             draw.text((30, receipt_height - 30), footer_text, fill="black", font=font_text)
-
+            
+            # Save receipt
             image.save(receipt_path)
             
-            self.status_var.set(f"Report saved to {os.path.basename(receipt_path)}")
-            messagebox.showinfo("Success", f"Report saved successfully to:\n{receipt_path}")
+            self.status_var.set(f"Receipt saved to {os.path.basename(receipt_path)}")
+            messagebox.showinfo("Success", f"Receipt saved successfully to:\n{receipt_path}")
             
         except Exception as e:
-            messagebox.showerror("Save Error", f"Error saving function report: {e}")
+            messagebox.showerror("Save Error", f"Error saving receipt: {e}")
         finally:
             # temp file cleaner
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
 
     def on_refresh(self):
-        if self.fig is not None:
-            plt.close(self.fig)
+        """Update the plot with current inputs without clearing them."""
         try:
             if hasattr(self, 'canvas'):
                 self.canvas.get_tk_widget().destroy()
@@ -1091,7 +975,8 @@ class FunctionVisualizerApp:
                 self.toolbar_frame.pack(side="bottom", fill="x")
                 self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
                 self.toolbar.update()
-
+                
+                # Store data for receipt
                 self.current_data = {
                     "functions": [{"expr": expr} for expr, _ in functions],
                     "x_range": x_range,
@@ -1109,16 +994,9 @@ class FunctionVisualizerApp:
             self.status_var.set("Error occurred")        
 
     def open_updates_link(self):
+        """Open the updates webpage in the default browser"""
         import webbrowser
-        webbrowser.open("https://github.com/Gshadow2005/DerivaPlot")
-
-    def on_closing(self):
-        for after_id in self.root.tk.call('after', 'info'):
-            self.root.after_cancel(after_id)
-        plt.close('all')
-        pygame.mixer.music.stop() 
-        pygame.mixer.quit()  
-        self.root.destroy()
+        webbrowser.open("https://github.com/Gshadow2005/DerivaPlot")  
     
     def on_closing(self):
         for after_id in self.root.tk.call('after', 'info'):
@@ -1127,6 +1005,7 @@ class FunctionVisualizerApp:
         self.root.destroy()
 
 def main():
+    """Main function to run the application."""
     root = ctk.CTk()
     app = FunctionVisualizerApp(root)
     root.mainloop()
