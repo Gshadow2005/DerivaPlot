@@ -130,35 +130,6 @@ class FunctionVisualizerApp:
         self.entry_func = ctk.CTkEntry(function_row, width=300, placeholder_text="e.g., sin(x) + 0.5*x**4")
         self.entry_func.pack(side="left", padx=5, fill="x", expand=True)
 
-        # Buttons old Sextion
-
-        # Range input
-        range_row = ctk.CTkFrame(self.input_frame)
-        range_row.pack(fill="x", pady=3)
-        
-        ctk.CTkLabel(range_row, text="X Range:", width=80).pack(side="left", padx=5)
-        self.entry_xmin = ctk.CTkEntry(range_row, width=80, placeholder_text="Min")
-        self.entry_xmin.pack(side="left", padx=5)
-        ctk.CTkLabel(range_row, text="to", width=20).pack(side="left")
-        self.entry_xmax = ctk.CTkEntry(range_row, width=80, placeholder_text="Max")
-        self.entry_xmax.pack(side="left", padx=5)
-
-        # Help button
-        self.help_button = ctk.CTkButton(
-            self.top_bar, 
-            text="❓ Help",
-            width=80,
-            height=28,
-            command=self.show_help
-        )
-        self.help_button.pack(side="right", padx=5, pady=5)
-
-        # Derivative
-        ctk.CTkLabel(range_row, text="Derivative:", width=80).pack(side="left", padx=(15, 5))
-        self.entry_order = ctk.CTkEntry(range_row, width=50, placeholder_text="Order")
-        self.entry_order.insert(0, "1")
-        self.entry_order.pack(side="left", padx=5, fill="x", expand=True)
-
         self.functions_list = []  
         self.add_function_button = ctk.CTkButton(
             self.input_frame,
@@ -192,7 +163,34 @@ class FunctionVisualizerApp:
             hover_color="#E04A4A"
         )
         self.roots_button.pack(fill="x", pady=3, padx=10)        
-                
+        
+        # Range input
+        range_row = ctk.CTkFrame(self.input_frame)
+        range_row.pack(fill="x", pady=3)
+        
+        ctk.CTkLabel(range_row, text="X Range:", width=80).pack(side="left", padx=5)
+        self.entry_xmin = ctk.CTkEntry(range_row, width=80, placeholder_text="Min")
+        self.entry_xmin.pack(side="left", padx=5)
+        ctk.CTkLabel(range_row, text="to", width=20).pack(side="left")
+        self.entry_xmax = ctk.CTkEntry(range_row, width=80, placeholder_text="Max")
+        self.entry_xmax.pack(side="left", padx=5)
+
+        # Help button
+        self.help_button = ctk.CTkButton(
+            self.top_bar, 
+            text="❓ Help",
+            width=80,
+            height=28,
+            command=self.show_help
+        )
+        self.help_button.pack(side="right", padx=5, pady=5)
+
+        # Derivative
+        ctk.CTkLabel(range_row, text="Derivative:", width=80).pack(side="left", padx=(15, 5))
+        self.entry_order = ctk.CTkEntry(range_row, width=50, placeholder_text="Order")
+        self.entry_order.insert(0, "1")
+        self.entry_order.pack(side="left", padx=5, fill="x", expand=True)
+        
         # Action buttons
         button_row = ctk.CTkFrame(self.input_frame)
         button_row.pack(fill="x", pady=(5, 3))
@@ -369,7 +367,6 @@ class FunctionVisualizerApp:
     4. Additional Features:
     - Click "+ Add Function" to plot multiple functions simultaneously
     - Use the "Show Critical Values" button to identify key points on the function
-    - Use the "Show Roots" button to find and display function roots
     - Toggle between light and dark themes for comfortable viewing
 
     5. Click "Plot Functions" to visualize:
