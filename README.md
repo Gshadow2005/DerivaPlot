@@ -5,11 +5,7 @@ a Python-based application that visualizes functions and their derivatives/integ
 
 [📂 Folder (All Versions)](https://drive.google.com/drive/folders/1Ve8oh3NoX3ZLcBz2dC5zEJuMa18r6h0O?usp=sharing)
 
-[Ver.0 (First Release)](https://drive.google.com/file/d/1S3p3UscpQRhf31VEvVgXfrIoqcEuaEME/view?usp=sharing)
-
-[Ver.1 (Bug Fixed and Major Update)](https://drive.google.com/file/d/1yzFQ-fbJJAZBIuD_QfLT9YhJ__zasjM_/view?usp=sharing)
-
-[Ver.2 (Button color and link to updates)](https://drive.google.com/file/d/1afjH94H5PzVizegg-KF3giXdvWV1KM5Z/view?usp=sharing)
+[Newest Version]([https://drive.google.com/file/d/1S3p3UscpQRhf31VEvVgXfrIoqcEuaEME/view?usp=sharing](https://drive.google.com/file/d/1elxcTKzQe_aDfcH4hp90BnMyop3spBIg/view?usp=sharing))
 
 ### ⚠️ Warning:  
 
