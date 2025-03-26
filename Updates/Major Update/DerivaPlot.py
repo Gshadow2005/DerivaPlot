@@ -116,7 +116,11 @@ class FunctionVisualizerApp:
         self.main_container.grid_columnconfigure(1, weight=4)
         self.main_container.grid_rowconfigure(0, weight=1)
 
-        self.input_frame = ctk.CTkFrame(self.main_container)
+        self.input_frame = ctk.CTkScrollableFrame(
+            self.main_container, 
+            orientation="vertical",
+            width=460
+        )
         self.input_frame.grid(row=0, column=0, padx=(0, 5), pady=5, sticky="nsew")
 
         self.graph_frame = ctk.CTkFrame(self.main_container)
@@ -263,9 +267,11 @@ class FunctionVisualizerApp:
             )
             remove_btn.pack(side="right", padx=5)
             
-            self.functions_list.append((function_row, entry_func))
+            self.functions_list.append((function_row, entry_func)) 
 
-        
+        # Statistics panel
+        self.create_statistics_panel()        
+
         # Graph placeholder
         self.canvas_frame = ctk.CTkFrame(self.graph_frame)
         self.canvas_frame.pack(fill="both", expand=True, padx=5, pady=5)
@@ -641,6 +647,7 @@ class FunctionVisualizerApp:
                     hover_color=self.reset_hover_color
                 )
                 
+                self.update_statistics(functions, x_range)
                 self.status_var.set("Plot completed successfully")
             except Exception as e:
                 messagebox.showerror("Calculation Error", f"Error calculating results: {e}")
@@ -901,6 +908,62 @@ class FunctionVisualizerApp:
                     messagebox.showerror("Roots Error", f"Error finding roots: {e}")
                     self.create_empty_graph()
 
+    def create_statistics_panel(self):
+        stats_frame = ctk.CTkFrame(self.input_frame)
+        stats_frame.pack(fill="x", pady=3)
+        
+        ctk.CTkLabel(stats_frame, text="Plot Statistics", font=("Arial", 12, "bold")).pack()
+
+        self.stats_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        self.stats_frame.pack(fill="x", padx=5, pady=(0, 2))  #vertical padding heir
+
+        self.stats_labels = {
+            "max_value": ctk.CTkLabel(self.stats_frame, text="Max Value: -", anchor="w"),
+            "min_value": ctk.CTkLabel(self.stats_frame, text="Min Value: -", anchor="w"),
+            "mean_value": ctk.CTkLabel(self.stats_frame, text="Mean Value: -", anchor="w"),
+            "std_deviation": ctk.CTkLabel(self.stats_frame, text="Standard Deviation: -", anchor="w"),
+            "area_under_curve": ctk.CTkLabel(self.stats_frame, text="Area Under Curve: -", anchor="w")
+        }
+
+        for i, (key, label) in enumerate(self.stats_labels.items()):
+            label.grid(row=i, column=0, sticky="w", padx=5, pady=1) 
+
+    def update_statistics(self, functions, x_range):
+        if not hasattr(self, 'stats_labels'):
+            return
+        
+        try:
+            x_vals = np.linspace(x_range[0], x_range[1], 400)
+            all_y_vals = []
+            for _, f in functions:
+                y_vals = f(x_vals)
+                all_y_vals.append(y_vals)
+            
+            all_y_vals = np.concatenate(all_y_vals)
+
+            self.stats_labels["max_value"].configure(text=f"Max Value: {np.max(all_y_vals):.2f}")
+            self.stats_labels["min_value"].configure(text=f"Min Value: {np.min(all_y_vals):.2f}")
+            self.stats_labels["mean_value"].configure(text=f"Mean Value: {np.mean(all_y_vals):.2f}")
+            self.stats_labels["std_deviation"].configure(text=f"Standard Deviation: {np.std(all_y_vals):.2f}")
+
+            areas = []
+            for _, f in functions:
+                y_vals = f(x_vals)
+                area = np.trapz(y_vals, x_vals)
+                areas.append(area)
+            
+            total_area = np.sum(areas)
+            self.stats_labels["area_under_curve"].configure(text=f"Area Under Curve: {total_area:.2f}")
+        
+        except Exception as e:
+            for label in self.stats_labels.values():
+                label.configure(text="- (Calculation Error)")
+
+    def reset_statistics(self):
+        if hasattr(self, 'stats_labels'):
+            for label in self.stats_labels.values():
+                label.configure(text=label.cget("text").split(":")[0] + ": -")
+
     def on_reset_plot(self):
         self.entry_func.delete(0, "end")
         self.entry_xmin.delete(0, "end")
@@ -909,6 +972,7 @@ class FunctionVisualizerApp:
         self.entry_order.insert(0, "1")
         self.critical_values_button.configure(state="disabled")
         self.roots_button.configure(state="disabled")
+        self.reset_statistics()
         
         # Clear additional function fields
         for frame, _ in self.functions_list:
@@ -1200,7 +1264,8 @@ class FunctionVisualizerApp:
                     "x_range": x_range,
                     "order": order_val
                 }
-                
+
+                self.update_statistics(functions, x_range)
                 self.status_var.set("Plot refreshed successfully")
             except Exception as e:
                 messagebox.showerror("Calculation Error", f"Error calculating results: {e}")

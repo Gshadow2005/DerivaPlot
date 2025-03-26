@@ -130,40 +130,8 @@ class FunctionVisualizerApp:
         self.entry_func = ctk.CTkEntry(function_row, width=300, placeholder_text="e.g., sin(x) + 0.5*x**4")
         self.entry_func.pack(side="left", padx=5, fill="x", expand=True)
 
-        self.functions_list = []  
-        self.add_function_button = ctk.CTkButton(
-            self.input_frame,
-            text="+ Add Function",
-            command=self.add_function_field,
-            width=120,
-            height=28
-        )
-        self.add_function_button.pack(fill="x", pady=3, padx=10)
+        # Buttons old Sextion
 
-        self.roots_button = ctk.CTkButton(
-            self.input_frame,
-            text="Show Roots",
-            command=self.on_show_roots,
-            width=120,
-            height=28,
-            state="disabled", 
-            fg_color="#FF5A5A", 
-            hover_color="#E04A4A"
-        )
-        self.roots_button.pack(fill="x", pady=3, padx=10)        
-
-        self.critical_values_button = ctk.CTkButton(
-            self.input_frame,
-            text="Show Critical Values",
-            command=self.on_show_critical_values,
-            width=120,
-            height=28,
-            state="disabled", 
-            fg_color="#FF5A5A", 
-            hover_color="#E04A4A"
-        )
-        self.critical_values_button.pack(fill="x", pady=3, padx=10)
-        
         # Range input
         range_row = ctk.CTkFrame(self.input_frame)
         range_row.pack(fill="x", pady=3)
@@ -190,7 +158,41 @@ class FunctionVisualizerApp:
         self.entry_order = ctk.CTkEntry(range_row, width=50, placeholder_text="Order")
         self.entry_order.insert(0, "1")
         self.entry_order.pack(side="left", padx=5, fill="x", expand=True)
-        
+
+        self.functions_list = []  
+        self.add_function_button = ctk.CTkButton(
+            self.input_frame,
+            text="+ Add Function",
+            command=self.add_function_field,
+            width=120,
+            height=28
+        )
+        self.add_function_button.pack(fill="x", pady=3, padx=10)
+
+        self.critical_values_button = ctk.CTkButton(
+            self.input_frame,
+            text="Show Critical Values",
+            command=self.on_show_critical_values,
+            width=120,
+            height=28,
+            state="disabled", 
+            fg_color="#FF5A5A", 
+            hover_color="#E04A4A"
+        )
+        self.critical_values_button.pack(fill="x", pady=3, padx=10)
+
+        self.roots_button = ctk.CTkButton(
+            self.input_frame,
+            text="Show Roots",
+            command=self.on_show_roots,
+            width=120,
+            height=28,
+            state="disabled", 
+            fg_color="#FF5A5A", 
+            hover_color="#E04A4A"
+        )
+        self.roots_button.pack(fill="x", pady=3, padx=10)        
+                
         # Action buttons
         button_row = ctk.CTkFrame(self.input_frame)
         button_row.pack(fill="x", pady=(5, 3))
@@ -367,6 +369,7 @@ class FunctionVisualizerApp:
     4. Additional Features:
     - Click "+ Add Function" to plot multiple functions simultaneously
     - Use the "Show Critical Values" button to identify key points on the function
+    - Use the "Show Roots" button to find and display function roots
     - Toggle between light and dark themes for comfortable viewing
 
     5. Click "Plot Functions" to visualize:
@@ -689,8 +692,6 @@ class FunctionVisualizerApp:
             messagebox.showerror("Critical Value Error", f"Error calculating critical values: {e}")
             return []
         
-        
-        
     def on_show_critical_values(self):
 
         try:
@@ -708,49 +709,39 @@ class FunctionVisualizerApp:
 
             self.status_var.set("Calculating critical values...")
             self.root.update()
-            
-            # Create plot
+
             x_vals = np.linspace(x_range[0], x_range[1], 400)
             
             try:
-                # Create figure
                 plt.style.use('default')
                 self.fig, ax = plt.subplots(figsize=(8, 5))
-                
-                # Set colors based on theme
+
                 background_color = "#242424" if self.appearance_mode == "dark" else "white"
                 text_color = "white" if self.appearance_mode == "dark" else "black"
                 self.fig.patch.set_facecolor(background_color)
                 ax.set_facecolor(background_color)
-                
-                # Color cycle for multiple functions
+
                 colors = plt.cm.tab10.colors
                 
                 critical_values_data = []
-                
-                # Plot each function with its critical values
+
                 for i, (expr, f) in enumerate(functions):
                     color_idx = i % len(colors)
                     base_color = colors[color_idx]
-                    
-                    # Calculate function values
+
                     y_vals = f(x_vals)
-                    
-                    # Find critical values
+
                     critical_values = self.find_critical_values(expr, x_range)
-                    
-                    # Plot function
+
                     ax.plot(x_vals, y_vals, label=f'Function: {expr}', 
                         color=base_color, linewidth=2)
-                    
-                    # Plot critical points
+
                     if critical_values:
                         cv_x = [point['x'] for point in critical_values]
                         cv_y = [point['y'] for point in critical_values]
                         ax.scatter(cv_x, cv_y, color='red', s=100, zorder=5, 
                                 label=f'Critical Points of {expr}')
-                        
-                        # Annotate critical points
+
                         for point in critical_values:
                             ax.annotate(
                                 f"x={point['x']:.2f}\ny={point['y']:.2f}\nf'={point['derivative']:.2f}", 
@@ -765,16 +756,14 @@ class FunctionVisualizerApp:
                         "expr": expr,
                         "critical_values": critical_values
                     })
-                
-                # Set labels and appearance
+
                 ax.set_xlabel('x', color=text_color)
                 ax.set_ylabel('y', color=text_color)
                 ax.set_title('Functions with Critical Values', color=text_color)
                 ax.tick_params(colors=text_color)
                 for spine in ax.spines.values():
                     spine.set_edgecolor(text_color)
-                
-                # Update legend
+
                 legend = ax.legend()
                 if legend is not None:
                     frame = legend.get_frame()
@@ -785,19 +774,16 @@ class FunctionVisualizerApp:
                         
                 ax.grid(True, alpha=0.3)
                 plt.tight_layout()
-                
-                # Display in UI
+
                 self.canvas = FigureCanvasTkAgg(self.fig, master=self.canvas_frame)
                 self.canvas.draw()
                 self.canvas.get_tk_widget().pack(fill="both", expand=True)
-                
-                # navigation toolbar
+
                 self.toolbar_frame = ctk.CTkFrame(self.canvas_frame)
                 self.toolbar_frame.pack(side="bottom", fill="x")
                 self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
                 self.toolbar.update()
-                
-                # Store data for receipt
+
                 self.current_data = {
                     "functions": [{"expr": expr} for expr, _ in functions],
                     "x_range": x_range,
@@ -813,6 +799,107 @@ class FunctionVisualizerApp:
             messagebox.showerror("Error", f"An error occurred: {e}")
             self.create_empty_graph()
             self.status_var.set("Error occurred")
+
+    def find_roots(self, function):
+            try:
+                x = sp.Symbol('x')
+                expr = sp.sympify(function, locals={"sin": sp.sin, "cos": sp.cos, "tan": sp.tan, 
+                                                    "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt,
+                                                    "pi": sp.pi, "e": sp.E})
+
+                roots = sp.solve(expr, x)
+
+                valid_roots = []
+                for root in roots:
+                    try:
+                        root_val = float(root)
+                        if root.is_real:
+                            valid_roots.append(root_val)
+                    except Exception:
+                        pass
+                
+                return valid_roots
+            except Exception as e:
+                messagebox.showerror("Root Finding Error", f"Error finding roots: {e}")
+                self.create_empty_graph()
+                return []
+
+    def on_show_roots(self):
+                try:
+                    is_valid, functions, x_range, order_val = self.validate_inputs()
+                    if not is_valid:
+                        return
+
+                    roots_window = ctk.CTkToplevel(self.root)
+                    roots_window.title("Function Roots")
+                    roots_window.geometry("400x300")
+                    roots_window.resizable(width=True, height=True)
+
+                    screen_width = roots_window.winfo_screenwidth()
+                    screen_height = roots_window.winfo_screenheight()
+                    x = (screen_width - 400) // 2
+                    y = (screen_height - 300) // 2
+                    roots_window.geometry(f'400x300+{x}+{y}')
+
+                    roots_frame = ctk.CTkScrollableFrame(roots_window, orientation="vertical")
+                    roots_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+                    header_label = ctk.CTkLabel(
+                        roots_frame, 
+                        text="Function Roots", 
+                        font=("Arial", 16, "bold")
+                    )
+                    header_label.pack(pady=(0, 10))
+
+                    for expr, f in functions:
+
+                        roots = self.find_roots(expr)
+
+                        func_frame = ctk.CTkFrame(roots_frame)
+                        func_frame.pack(fill="x", pady=5)
+
+                        func_label = ctk.CTkLabel(
+                            func_frame, 
+                            text=f"Function: {expr}", 
+                            font=("Arial", 12, "bold")
+                        )
+                        func_label.pack(anchor="w")
+
+                        if roots:
+                            roots_text = "Roots:\n"
+                            for root in roots:
+                                # Check if root is essentially an integer
+                                if abs(root - round(root)) < 1e-10:
+                                    roots_text += f"x = {int(round(root))}\n"
+                                else:
+                                    roots_text += f"x = {root:.4f}\n"
+                            
+                            roots_info = ctk.CTkLabel(
+                                func_frame, 
+                                text=roots_text.strip(), 
+                                justify="left"
+                            )
+                            roots_info.pack(anchor="w", padx=(20, 0))
+                        else:
+                            no_roots_label = ctk.CTkLabel(
+                                func_frame, 
+                                text="No real roots found", 
+                                text_color="red"
+                            )
+                            no_roots_label.pack(anchor="w", padx=(20, 0))
+
+                    close_button = ctk.CTkButton(
+                        roots_window, 
+                        text="Close", 
+                        command=roots_window.destroy
+                    )
+                    close_button.pack(pady=10)
+                    roots_window.grab_set()
+                    roots_window.focus_force()
+
+                except Exception as e:
+                    messagebox.showerror("Roots Error", f"Error finding roots: {e}")
+                    self.create_empty_graph()
 
     def on_reset_plot(self):
         self.entry_func.delete(0, "end")
@@ -863,162 +950,6 @@ class FunctionVisualizerApp:
         
         # Reset status
         self.status_var.set("Ready to plot")
-
-    def find_roots(self, function, x_range):
-        try:
-            x = sp.Symbol('x')
-            expr = sp.sympify(function, locals={"sin": sp.sin, "cos": sp.cos, "tan": sp.tan, 
-                                                "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt,
-                                                "pi": sp.pi, "e": sp.E})
-            
-            # Try factor method first for polynomials
-            try:
-                # Attempt to factor the expression
-                factored = sp.factor(expr)
-                
-                # If factored successfully, extract roots
-                if factored.is_Mul:
-                    roots = []
-                    for factor in sp.collect(factored, x).args:
-                        if factor.is_Add and factor.as_poly(x).degree() == 1:
-                            # Linear factor (x - a)
-                            root = -factor.subs(x, 0)
-                            roots.append(root)
-            except Exception:
-                # Fallback to solve if factoring fails
-                roots = sp.solve(expr, x)
-            
-            # Filter roots within the specified range
-            valid_roots = [
-                root for root in roots 
-                if x_range[0] <= float(root) <= x_range[1] and sp.im(root) == 0
-            ]
-            
-            # If no roots found, return empty list
-            if not valid_roots:
-                return []
-            
-            # Convert roots to float and format
-            root_values = [float(root) for root in valid_roots]
-            
-            # Remove duplicates and sort
-            return sorted(set(root_values))
-        except Exception as e:
-            messagebox.showerror("Root Finding Error", f"Error finding roots: {e}")
-            return []
-
-    def on_show_roots(self):
-        try:
-            is_valid, functions, x_range, order_val = self.validate_inputs()
-            if not is_valid:
-                self.create_empty_graph()
-                return
-        
-            if hasattr(self, 'canvas'):
-                self.canvas.get_tk_widget().destroy()
-            if hasattr(self, 'toolbar'):
-                self.toolbar.destroy()
-            if hasattr(self, 'toolbar_frame'):
-                self.toolbar_frame.destroy()
-
-            self.status_var.set("Finding roots...")
-            self.root.update()
-            
-            # Create plot
-            x_vals = np.linspace(x_range[0], x_range[1], 400)
-            
-            try:
-                plt.style.use('default')
-                self.fig, ax = plt.subplots(figsize=(8, 5))
-                
-                # Set colors based on theme
-                background_color = "#242424" if self.appearance_mode == "dark" else "white"
-                text_color = "white" if self.appearance_mode == "dark" else "black"
-                self.fig.patch.set_facecolor(background_color)
-                ax.set_facecolor(background_color)
-
-                colors = plt.cm.tab10.colors
-                
-                roots_data = []
-
-                for i, (expr, f) in enumerate(functions):
-                    color_idx = i % len(colors)
-                    base_color = colors[color_idx]
-
-                    y_vals = f(x_vals)
-
-                    roots = self.find_roots(expr, x_range)
-
-                    ax.plot(x_vals, y_vals, label=f'Function: {expr}', 
-                        color=base_color, linewidth=2)
-
-                    if roots:
-                        root_y = [0] * len(roots)
-                        ax.scatter(roots, root_y, color='red', s=100, zorder=5, 
-                                label=f'Roots of {expr}')
-
-                        for root in roots:
-                            ax.annotate(
-                                f"x = {root:.2f}", 
-                                (root, 0), 
-                                xytext=(10, 10),
-                                textcoords='offset points',
-                                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
-                                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0')
-                            )
-                    
-                    roots_data.append({
-                        "expr": expr,
-                        "roots": roots
-                    })
-                
-                # Set labels and appearance
-                ax.set_xlabel('x', color=text_color)
-                ax.set_ylabel('y', color=text_color)
-                ax.set_title('Functions with Roots', color=text_color)
-                ax.tick_params(colors=text_color)
-                for spine in ax.spines.values():
-                    spine.set_edgecolor(text_color)
-                
-                # Update legend
-                legend = ax.legend()
-                if legend is not None:
-                    frame = legend.get_frame()
-                    frame.set_facecolor(background_color)
-                    frame.set_edgecolor(text_color)
-                    for text in legend.get_texts():
-                        text.set_color(text_color)
-                        
-                ax.grid(True, alpha=0.3)
-                plt.tight_layout()
-                
-                # Display in UI
-                self.canvas = FigureCanvasTkAgg(self.fig, master=self.canvas_frame)
-                self.canvas.draw()
-                self.canvas.get_tk_widget().pack(fill="both", expand=True)
-                
-                # navigation toolbar
-                self.toolbar_frame = ctk.CTkFrame(self.canvas_frame)
-                self.toolbar_frame.pack(side="bottom", fill="x")
-                self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
-                self.toolbar.update()
-                
-                # Store data for receipt
-                self.current_data = {
-                    "functions": [{"expr": expr} for expr, _ in functions],
-                    "x_range": x_range,
-                    "roots": roots_data
-                }
-                
-                self.status_var.set("Roots plotted successfully")
-            except Exception as e:
-                messagebox.showerror("Calculation Error", f"Error finding roots: {e}")
-                self.status_var.set("Error in calculation")
-                
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
-            self.create_empty_graph()
-            self.status_var.set("Error occurred")
 
     def create_empty_graph(self):
         if self.fig is not None:

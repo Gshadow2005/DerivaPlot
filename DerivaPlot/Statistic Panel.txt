@@ -1,0 +1,76 @@
+    def create_statistics_panel(self):
+        stats_frame = ctk.CTkFrame(self.input_frame)
+        stats_frame.pack(fill="x", pady=3)
+        
+        ctk.CTkLabel(stats_frame, text="Plot Statistics", font=("Arial", 12, "bold")).pack()
+
+        self.stats_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        self.stats_frame.pack(fill="x", padx=5, pady=(0, 2))  #vertical padding heir
+
+        self.stats_labels = {
+            "max_value": ctk.CTkLabel(self.stats_frame, text="Max Value: -", anchor="w"),
+            "min_value": ctk.CTkLabel(self.stats_frame, text="Min Value: -", anchor="w"),
+            "mean_value": ctk.CTkLabel(self.stats_frame, text="Mean Value: -", anchor="w"),
+            "std_deviation": ctk.CTkLabel(self.stats_frame, text="Standard Deviation: -", anchor="w"),
+            "area_under_curve": ctk.CTkLabel(self.stats_frame, text="Area Under Curve: -", anchor="w")
+        }
+
+        for i, (key, label) in enumerate(self.stats_labels.items()):
+            label.grid(row=i, column=0, sticky="w", padx=5, pady=1) 
+
+    def update_statistics(self, functions, x_range):
+        if not hasattr(self, 'stats_labels'):
+            return
+        
+        try:
+            x_vals = np.linspace(x_range[0], x_range[1], 400)
+            all_y_vals = []
+            for _, f in functions:
+                y_vals = f(x_vals)
+                all_y_vals.append(y_vals)
+            
+            all_y_vals = np.concatenate(all_y_vals)
+
+            self.stats_labels["max_value"].configure(text=f"Max Value: {np.max(all_y_vals):.2f}")
+            self.stats_labels["min_value"].configure(text=f"Min Value: {np.min(all_y_vals):.2f}")
+            self.stats_labels["mean_value"].configure(text=f"Mean Value: {np.mean(all_y_vals):.2f}")
+            self.stats_labels["std_deviation"].configure(text=f"Standard Deviation: {np.std(all_y_vals):.2f}")
+
+            areas = []
+            for _, f in functions:
+                y_vals = f(x_vals)
+                area = np.trapz(y_vals, x_vals)
+                areas.append(area)
+            
+            total_area = np.sum(areas)
+            self.stats_labels["area_under_curve"].configure(text=f"Area Under Curve: {total_area:.2f}")
+        
+        except Exception as e:
+            for label in self.stats_labels.values():
+                label.configure(text="- (Calculation Error)")
+
+    def reset_statistics(self):
+        if hasattr(self, 'stats_labels'):
+            for label in self.stats_labels.values():
+                label.configure(text=label.cget("text").split(":")[0] + ": -")
+
+
+def create_widgets(self):
+
+    # after graping panel
+    self.create_statistics_panel()
+
+def on_plot(self):
+    
+    # top of the successful plotting
+    self.update_statistics(functions, x_range)
+
+def on_refresh(self):
+    
+    # top of the successful plotting
+    self.update_statistics(functions, x_range)
+
+def on_reset(self):
+    
+    # at start of the method
+    self.reset_statistics()    
