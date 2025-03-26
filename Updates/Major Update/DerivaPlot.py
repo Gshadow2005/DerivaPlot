@@ -9,6 +9,7 @@ from tkinter import filedialog, messagebox
 from PIL import Image, ImageDraw, ImageFont
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from scipy.integrate import quad
+from scipy.optimize import brentq
 
 class FunctionVisualizerApp:
     def __init__(self, root):
@@ -661,30 +662,27 @@ class FunctionVisualizerApp:
     def find_critical_values(self, function, x_range):
         try:
             x = sp.Symbol('x')
-            expr = sp.sympify(function, locals={"sin": sp.sin, "cos": sp.cos, "tan": sp.tan, 
-                                                "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt,
-                                                "pi": sp.pi, "e": sp.E})
-            
-            # First derivative
+            expr = sp.sympify(function, locals={
+                "sin": sp.sin, "cos": sp.cos, "tan": sp.tan, 
+                "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt,
+                "pi": sp.pi, "e": sp.E
+            })
+
             derivative = sp.diff(expr, x)
-            
-            # Find derivative roots within the range
-            critical_points = sp.solve(derivative, x)
-            
-            # Filter critical points within the specified range
+
+            critical_points = sp.nroots(derivative)
+
             valid_critical_points = [
                 point for point in critical_points 
-                if x_range[0] <= float(point) <= x_range[1] and point.is_real
+                if x_range[0] <= float(point.evalf()) <= x_range[1] and sp.im(point) == 0
             ]
-            
-            # If no critical points found, return empty list
+
             if not valid_critical_points:
                 return []
-            
-            # Evaluate function values at critical points
+
             critical_values = []
             for point in valid_critical_points:
-                point_val = float(point)
+                point_val = float(point.evalf())
                 func_val = float(expr.subs(x, point))
                 derivative_val = float(derivative.subs(x, point))
                 
@@ -696,7 +694,7 @@ class FunctionVisualizerApp:
             
             return critical_values
         except Exception as e:
-            messagebox.showerror("Critical Value Error", f"Error calculating critical values: {e}")
+            print(f"Critical Value Error: {e}")
             return []
         
     def on_show_critical_values(self):
@@ -808,28 +806,54 @@ class FunctionVisualizerApp:
             self.status_var.set("Error occurred")
 
     def find_roots(self, function):
+        try:
+            x = sp.Symbol('x')
+            expr = sp.sympify(function, locals={
+                "sin": sp.sin, "cos": sp.cos, "tan": sp.tan, 
+                "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt,
+                "pi": sp.pi, "e": sp.E
+            })
+
+            # Use multiple strategies for root finding
             try:
-                x = sp.Symbol('x')
-                expr = sp.sympify(function, locals={"sin": sp.sin, "cos": sp.cos, "tan": sp.tan, 
-                                                    "exp": sp.exp, "log": sp.log, "sqrt": sp.sqrt,
-                                                    "pi": sp.pi, "e": sp.E})
-
+                # First, try analytical solving
                 roots = sp.solve(expr, x)
+            except Exception:
+                roots = []
 
-                valid_roots = []
-                for root in roots:
-                    try:
-                        root_val = float(root)
-                        if root.is_real:
-                            valid_roots.append(root_val)
-                    except Exception:
-                        pass
+            # If analytical solving fails, use numerical methods
+            if not roots:
+                # Create a numerical function from the symbolic expression
+                def f(val):
+                    return float(expr.subs(x, val))
                 
-                return valid_roots
-            except Exception as e:
-                messagebox.showerror("Root Finding Error", f"Error finding roots: {e}")
-                self.create_empty_graph()
-                return []
+                # Use scipy for numerical root finding
+                from scipy.optimize import brentq
+                roots = []
+                
+                # Try to find roots in a reasonable range
+                try:
+                    # Assuming we want roots in the visible range
+                    root = brentq(f, -10, 10)
+                    roots.append(root)
+                except ValueError:
+                    # No roots found in the given range
+                    pass
+
+            # Filter and convert roots
+            valid_roots = []
+            for root in roots:
+                try:
+                    # Convert to float and check if real
+                    root_val = float(root)
+                    valid_roots.append(root_val)
+                except Exception:
+                    pass
+            
+            return valid_roots
+        except Exception as e:
+            messagebox.showerror("Root Finding Error", f"Error finding roots: {e}")
+            return []
 
     def on_show_roots(self):
                 try:
