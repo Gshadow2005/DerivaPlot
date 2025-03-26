@@ -186,7 +186,6 @@ class FunctionVisualizerApp:
         )
         self.btn_plot.grid(row=0, column=1, padx=3, pady=5)
         
-        self.btn_receipt.grid(row=0, column=3, padx=3, pady=5)
 
         self.btn_refresh = ctk.CTkButton(
             button_row, 
