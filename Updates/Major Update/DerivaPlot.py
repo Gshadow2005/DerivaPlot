@@ -949,7 +949,7 @@ class FunctionVisualizerApp:
             areas = []
             for _, f in functions:
                 y_vals = f(x_vals)
-                area = np.trapz(y_vals, x_vals)
+                area = np.trapezoid(y_vals, x_vals)
                 areas.append(area)
             
             total_area = np.sum(areas)
