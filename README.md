@@ -1,7 +1,7 @@
-# CALCULUS-PIT
+## CALCULUS-PIT
 a Python-based application that visualizes functions and their derivatives/integrals using computational methods.
 
-## Link to download The EXE file:
+### Link to download The EXE file:
 
 [📂 Folder (All Versions)](https://drive.google.com/drive/folders/1Ve8oh3NoX3ZLcBz2dC5zEJuMa18r6h0O?usp=sharing)
 
