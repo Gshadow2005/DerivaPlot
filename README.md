@@ -55,7 +55,7 @@ DerivaPlot is a Python-based application that enables visualization of mathemati
 ## Download Links:
 - [📂 Folder (All Versions)](https://drive.google.com/drive/folders/1Ve8oh3NoX3ZLcBz2dC5zEJuMa18r6h0O?usp=sharing)
   
-- [Newest Version](https://drive.google.com/file/d/1elxcTKzQe_aDfcH4hp90BnMyop3spBIg/view?usp=sharing)
+- [Newest Version](https://drive.google.com/file/d/1LXMkEHPmOo8WYRsTQuLZVlH8nen83ojd/view?usp=drive_link)
 
 ## ⚠️ Warning:
 Downloading this file might be marked as unsafe by your browser or antivirus. Please be assured that it is safe. Press **"Keep"** to save it on your device.
