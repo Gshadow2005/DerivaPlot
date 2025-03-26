@@ -65,7 +65,6 @@ class FunctionVisualizerApp:
         self.create_widgets()
 
     def add_function_field(self):
-        """Add a new function input field"""
         function_row = ctk.CTkFrame(self.functions_scroll_frame)
         function_row.pack(fill="x", pady=3)
         
@@ -85,7 +84,6 @@ class FunctionVisualizerApp:
         self.functions_list.append((function_row, entry_func))
 
     def remove_function_field(self, frame, entry):
-        """Remove a function input field"""
         idx = None
         for i, (fr, ent) in enumerate(self.functions_list):
             if fr == frame and ent == entry:
@@ -280,7 +278,6 @@ class FunctionVisualizerApp:
         self.create_empty_graph()
     
     def toggle_theme(self):
-        """Toggle between light and dark mode"""
         if self.appearance_mode == "dark":
             self.appearance_mode = "light"
             ctk.set_appearance_mode("light")
@@ -295,7 +292,6 @@ class FunctionVisualizerApp:
             self.update_plot_theme()
     
     def update_plot_theme(self):
-        """Update the plot theme to match the app theme"""
         if self.fig is not None:
             background_color = "#242424" if self.appearance_mode == "dark" else "white"
             text_color = "white" if self.appearance_mode == "dark" else "black"
@@ -323,7 +319,6 @@ class FunctionVisualizerApp:
             self.canvas.draw()
 
     def show_help(self):
-        """Display a help popup with information about the application"""
         text_color = "white" if self.appearance_mode == "dark" else "black"
         
         help_window = ctk.CTkToplevel(self.root)
@@ -417,7 +412,6 @@ class FunctionVisualizerApp:
         close_button.pack(pady=10)
         
     def validate_inputs(self):
-        """Validate all user inputs and check for empty fields."""
         main_expr = self.entry_func.get().strip()
         x_min = self.entry_xmin.get().strip()
         x_max = self.entry_xmax.get().strip()
@@ -489,7 +483,6 @@ class FunctionVisualizerApp:
             return False, None, None, None
             
     def numerical_derivative(self, f, x_vals, order=1):
-        """Compute the numerical derivative of a function."""
         if order == 1:
             dx = x_vals[1] - x_vals[0]
             return np.gradient(f(x_vals), dx)
@@ -502,7 +495,6 @@ class FunctionVisualizerApp:
             return result
 
     def numerical_integral(self, f, x_vals):
-        """Compute the numerical integral of a function."""
         return np.array([quad(f, x_vals[0], x)[0] for x in x_vals])
         
     def on_plot(self):
@@ -685,7 +677,7 @@ class FunctionVisualizerApp:
             return []
         
     def on_show_critical_values(self):
-        """Handle showing critical values on the plot"""
+
         try:
             is_valid, functions, x_range, order_val = self.validate_inputs()
             if not is_valid:
@@ -808,8 +800,6 @@ class FunctionVisualizerApp:
             self.status_var.set("Error occurred")
 
     def on_reset_plot(self):
-        """Reset the plot and input fields."""
-        # Clear input fields
         self.entry_func.delete(0, "end")
         self.entry_xmin.delete(0, "end")
         self.entry_xmax.delete(0, "end")
@@ -896,7 +886,6 @@ class FunctionVisualizerApp:
         self.toolbar.update()
     
     def on_save_image(self):
-        """Save the current plot as an image."""
         if self.fig is None:
             messagebox.showerror("Error", "No plot to save")
             return
@@ -916,14 +905,13 @@ class FunctionVisualizerApp:
                 messagebox.showerror("Save Error", f"Error saving image: {e}")
     
     def on_save_function_report(self):
-        """Save a receipt with function details and the graph."""
         if self.fig is None or not hasattr(self, 'current_data'):
             messagebox.showerror("Error", "No data to generate report")
             return
             
         receipt_path = filedialog.asksaveasfilename(
             defaultextension=".png", 
-            filetypes=[("PNG files", "*.png")],
+            filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("PDF files", "*.pdf")],
             initialfile="DerivaPlot_Function_Analysis_Report.png"
         )
         if not receipt_path:
@@ -1122,7 +1110,6 @@ class FunctionVisualizerApp:
             self.status_var.set("Error occurred")        
 
     def open_updates_link(self):
-        """Open the updates webpage in the default browser"""
         import webbrowser
         webbrowser.open("https://github.com/Gshadow2005/DerivaPlot")
 
@@ -1141,7 +1128,6 @@ class FunctionVisualizerApp:
         self.root.destroy()
 
 def main():
-    """Main function to run the application."""
     root = ctk.CTk()
     app = FunctionVisualizerApp(root)
     root.mainloop()
