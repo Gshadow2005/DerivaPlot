@@ -74,3 +74,14 @@ def on_reset(self):
     
     # at start of the method
     self.reset_statistics()    
+
+
+ERRORS
+
+cos(x) + 0.5*x
+1,2,1
+root
+
+sin(x) + x**2
+1,2,1
+root and critical    
