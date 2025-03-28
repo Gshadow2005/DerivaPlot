@@ -9,7 +9,7 @@ from tkinter import filedialog, messagebox
 from PIL import Image, ImageDraw, ImageFont
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from scipy.integrate import quad
-from scipy.optimize import brentq
+from scipy.optimize import brentq # type: ignore
 
 class FunctionVisualizerApp:
     def __init__(self, root):
