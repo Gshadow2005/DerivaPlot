@@ -5,6 +5,8 @@ from scipy.integrate import quad
 from scipy.optimize import brentq
 import os
 import sys # type: ignore
+import tkinter as tk
+from tkinter import filedialog
 
 class ConsoleDerivationPlotter:
     def __init__(self):
@@ -13,6 +15,8 @@ class ConsoleDerivationPlotter:
         self.derivative_order = 1
         self.current_data = None
         self.fig = None
+        self.root = tk.Tk()
+        self.root.withdraw()
         
     def clear_console(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -450,12 +454,10 @@ class ConsoleDerivationPlotter:
             return
         
         print("\nSave Plot:")
-        filename = input("Enter filename (without extension): ")
+        default_filename = input("Enter default filename (without extension): ")
         
-        if not filename:
-            print("Save cancelled.")
-            input("\nPress Enter to continue...")
-            return
+        if not default_filename:
+            default_filename = "plot"
         
         print("\nSelect file format:")
         print("1. PNG")
@@ -468,13 +470,27 @@ class ConsoleDerivationPlotter:
         extension_map = {"1": "png", "2": "jpg", "3": "pdf", "4": "svg"}
         if choice in extension_map:
             extension = extension_map[choice]
-            filepath = f"{filename}.{extension}"
             
-            try:
-                self.fig.savefig(filepath, dpi=300, bbox_inches='tight')
-                print(f"\nPlot saved successfully as '{filepath}'")
-            except Exception as e:
-                print(f"\nError saving plot: {e}")
+            print("\nOpening file dialog. Please select where to save the file...")
+            
+            # Open file dialog to choose save location
+            filepath = filedialog.asksaveasfilename(
+                initialfile=f"{default_filename}.{extension}",
+                defaultextension=f".{extension}",
+                filetypes=[
+                    (f"{extension.upper()} files", f"*.{extension}"),
+                    ("All files", "*.*")
+                ]
+            )
+            
+            if filepath:
+                try:
+                    self.fig.savefig(filepath, dpi=300, bbox_inches='tight')
+                    print(f"\nPlot saved successfully as '{filepath}'")
+                except Exception as e:
+                    print(f"\nError saving plot: {e}")
+            else:
+                print("\nSave cancelled.")
         else:
             print("\nInvalid choice. Save cancelled.")
         
@@ -562,17 +578,30 @@ class ConsoleDerivationPlotter:
         
         print("\nGenerating function report...\n")
         
-        filename = input("Enter filename for the report (without extension): ")
+        default_filename = input("Enter default filename for the report (without extension): ")
         
-        if not filename:
+        if not default_filename:
+            default_filename = "derivaplot_report"  # Default name if none provided
+        
+        print("\nOpening file dialog. Please select where to save the report...")
+        
+        # Open file dialog for the report text file
+        report_filepath = filedialog.asksaveasfilename(
+            initialfile=f"{default_filename}.txt",
+            defaultextension=".txt",
+            filetypes=[
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ]
+        )
+        
+        if not report_filepath:
             print("Report generation cancelled.")
             input("\nPress Enter to continue...")
             return
         
-        filepath = f"{filename}.txt"
-        
         try:
-            with open(filepath, 'w') as f:
+            with open(report_filepath, 'w') as f:
                 f.write("=" * 60 + "\n")
                 f.write("             DERIVAPLOT FUNCTION ANALYSIS REPORT\n")
                 f.write("=" * 60 + "\n\n")
@@ -630,12 +659,34 @@ class ConsoleDerivationPlotter:
                 f.write(f"Report generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write("\nThank you for using DerivaPlot")
             
-            print(f"\nReport saved successfully as '{filepath}'")
+            print(f"\nReport saved successfully as '{report_filepath}'")
             
-            # Save plot to accompany the report
-            plot_filepath = f"{filename}_plot.png"
-            self.fig.savefig(plot_filepath, dpi=300, bbox_inches='tight')
-            print(f"Plot image saved as '{plot_filepath}'")
+            # Ask if user wants to save the plot image alongside the report
+            plot_choice = input("\nDo you want to save the plot image as well? (y/n): ")
+            
+            if plot_choice.lower() == 'y':
+                # Get directory of report file to suggest as default location
+                report_dir = os.path.dirname(report_filepath)
+                report_basename = os.path.splitext(os.path.basename(report_filepath))[0]
+                
+                plot_filepath = filedialog.asksaveasfilename(
+                    initialdir=report_dir,
+                    initialfile=f"{report_basename}_plot.png",
+                    defaultextension=".png",
+                    filetypes=[
+                        ("PNG files", "*.png"),
+                        ("JPEG files", "*.jpg"),
+                        ("PDF files", "*.pdf"),
+                        ("SVG files", "*.svg"),
+                        ("All files", "*.*")
+                    ]
+                )
+                
+                if plot_filepath:
+                    self.fig.savefig(plot_filepath, dpi=300, bbox_inches='tight')
+                    print(f"Plot image saved as '{plot_filepath}'")
+                else:
+                    print("Plot save cancelled.")
             
         except Exception as e:
             print(f"\nError generating report: {e}")
@@ -652,6 +703,7 @@ class ConsoleDerivationPlotter:
             
             if choice == '0':
                 print("\nExiting DerivaPlot. Goodbye!")
+                self.root.destroy()  # Clean up tkinter resources
                 break
             elif choice == '1':
                 self.manage_functions()
@@ -674,7 +726,6 @@ class ConsoleDerivationPlotter:
             else:
                 print("\nInvalid choice. Please enter a number between 0 and 9.")
                 input("\nPress Enter to continue...")
-
 
 def main():
     try:
