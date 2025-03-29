@@ -2,12 +2,10 @@ import numpy as np
 import sympy as sp
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
-from scipy.optimize import brentq
 import os
-import sys # type: ignore
-import tkinter as tk
-from tkinter import filedialog
-import time
+import sys
+from scipy.optimize import brentq
+
 
 class ConsoleDerivationPlotter:
     def __init__(self):
@@ -16,19 +14,20 @@ class ConsoleDerivationPlotter:
         self.derivative_order = 1
         self.current_data = None
         self.fig = None
-        self.root = tk.Tk()
-        self.root.withdraw()
         
     def clear_console(self):
+        """Clear the console screen."""
         os.system('cls' if os.name == 'nt' else 'clear')
         
     def print_header(self):
+        """Print the application header."""
         print("\n" + "=" * 60)
         print("                      DERIVAPLOT")
         print("          Function Plotter & Derivative Visualizer")
         print("=" * 60)
         
     def print_menu(self):
+        """Print the main menu options."""
         print("\nMain Menu:")
         print("1. Add/Edit Functions")
         print("2. Set X Range")
@@ -43,6 +42,7 @@ class ConsoleDerivationPlotter:
         print("-" * 60)
         
     def validate_function(self, function_expr):
+        """Validate a function expression."""
         try:
             x = sp.symbols('x')
             sympy_expr = sp.sympify(function_expr, locals={
@@ -62,6 +62,7 @@ class ConsoleDerivationPlotter:
             return False, None, function_expr
     
     def manage_functions(self):
+        """Add or edit functions."""
         self.clear_console()
         self.print_header()
         
@@ -115,6 +116,7 @@ class ConsoleDerivationPlotter:
         input("\nPress Enter to continue...")
     
     def set_x_range(self):
+        """Set the x-axis range for plotting."""
         self.clear_console()
         self.print_header()
         
@@ -152,6 +154,7 @@ class ConsoleDerivationPlotter:
         input("\nPress Enter to continue...")
     
     def numerical_derivative(self, f, x_vals, order=1):
+        """Calculate numerical derivative of a function."""
         if order == 1:
             dx = x_vals[1] - x_vals[0]
             return np.gradient(f(x_vals), dx)
@@ -163,6 +166,7 @@ class ConsoleDerivationPlotter:
             return result
 
     def numerical_integral(self, f, x_vals):
+        """Calculate numerical integral of a function."""
         return np.array([quad(f, x_vals[0], x)[0] for x in x_vals])
     
     def plot_functions(self):
@@ -198,9 +202,9 @@ class ConsoleDerivationPlotter:
                 
                 ax.plot(x_vals, y_vals, label=f'Function: {expr}', color=base_color, linewidth=2)
                 ax.plot(x_vals, dydx_vals, label=f'{self.derivative_order}-Order Derivative of {expr}', 
-                    color=base_color, linestyle='dashed', linewidth=1.5)
+                       color=base_color, linestyle='dashed', linewidth=1.5)
                 ax.plot(x_vals, integral_vals, label=f'Integral of {expr}', 
-                    color=base_color, linestyle='dotted', linewidth=1.5)
+                       color=base_color, linestyle='dotted', linewidth=1.5)
                 
                 all_functions_data.append({
                     "expr": expr, 
@@ -238,6 +242,7 @@ class ConsoleDerivationPlotter:
             input("\nPress Enter to continue...")
     
     def find_critical_values(self, function_expr, x_range):
+        """Find critical values of a function."""
         try:
             x = sp.Symbol('x')
             expr = sp.sympify(function_expr, locals={
@@ -277,6 +282,7 @@ class ConsoleDerivationPlotter:
             return []
     
     def show_critical_values(self):
+        """Display critical values and plot them."""
         self.clear_console()
         self.print_header()
         
@@ -367,6 +373,7 @@ class ConsoleDerivationPlotter:
         input("\nPress Enter to continue...")
     
     def find_roots(self, function_expr):
+        """Find roots of a function."""
         try:
             x = sp.Symbol('x')
             expr = sp.sympify(function_expr, locals={
@@ -418,6 +425,7 @@ class ConsoleDerivationPlotter:
             return []
     
     def show_roots(self):
+        """Display roots for each function."""
         self.clear_console()
         self.print_header()
         
@@ -446,6 +454,7 @@ class ConsoleDerivationPlotter:
         input("\nPress Enter to continue...")
     
     def save_plot(self):
+        """Save the current plot as an image file."""
         self.clear_console()
         self.print_header()
         
@@ -455,10 +464,12 @@ class ConsoleDerivationPlotter:
             return
         
         print("\nSave Plot:")
-        default_filename = input("Enter default filename (without extension): ")
+        filename = input("Enter filename (without extension): ")
         
-        if not default_filename:
-            default_filename = "plot"
+        if not filename:
+            print("Save cancelled.")
+            input("\nPress Enter to continue...")
+            return
         
         print("\nSelect file format:")
         print("1. PNG")
@@ -471,33 +482,20 @@ class ConsoleDerivationPlotter:
         extension_map = {"1": "png", "2": "jpg", "3": "pdf", "4": "svg"}
         if choice in extension_map:
             extension = extension_map[choice]
+            filepath = f"{filename}.{extension}"
             
-            print("\nOpening file dialog. Please select where to save the file...")
-            
-            # Open file dialog to choose save location
-            filepath = filedialog.asksaveasfilename(
-                initialfile=f"{default_filename}.{extension}",
-                defaultextension=f".{extension}",
-                filetypes=[
-                    (f"{extension.upper()} files", f"*.{extension}"),
-                    ("All files", "*.*")
-                ]
-            )
-            
-            if filepath:
-                try:
-                    self.fig.savefig(filepath, dpi=300, bbox_inches='tight')
-                    print(f"\nPlot saved successfully as '{filepath}'")
-                except Exception as e:
-                    print(f"\nError saving plot: {e}")
-            else:
-                print("\nSave cancelled.")
+            try:
+                self.fig.savefig(filepath, dpi=300, bbox_inches='tight')
+                print(f"\nPlot saved successfully as '{filepath}'")
+            except Exception as e:
+                print(f"\nError saving plot: {e}")
         else:
             print("\nInvalid choice. Save cancelled.")
         
         input("\nPress Enter to continue...")
     
     def calculate_statistics(self):
+        """Calculate statistics for the plotted functions."""
         if not self.functions:
             return None
         
@@ -510,7 +508,8 @@ class ConsoleDerivationPlotter:
                 all_y_vals.append(y_vals)
             
             all_y_vals = np.concatenate(all_y_vals)
-
+            
+            # Calculate areas under curves
             areas = []
             for _, f in self.functions:
                 y_vals = f(x_vals)
@@ -533,6 +532,7 @@ class ConsoleDerivationPlotter:
             return None
     
     def show_statistics(self):
+        """Display statistics for the current functions."""
         self.clear_console()
         self.print_header()
         
@@ -564,6 +564,7 @@ class ConsoleDerivationPlotter:
         input("\nPress Enter to continue...")
     
     def generate_report(self):
+        """Generate a text report for the current functions."""
         self.clear_console()
         self.print_header()
         
@@ -579,30 +580,17 @@ class ConsoleDerivationPlotter:
         
         print("\nGenerating function report...\n")
         
-        default_filename = input("Enter default filename for the report (without extension): ")
+        filename = input("Enter filename for the report (without extension): ")
         
-        if not default_filename:
-            default_filename = "derivaplot_report"  # Default name if none provided
-        
-        print("\nOpening file dialog. Please select where to save the report...")
-        
-        # Open file dialog for the report text file
-        report_filepath = filedialog.asksaveasfilename(
-            initialfile=f"{default_filename}.txt",
-            defaultextension=".txt",
-            filetypes=[
-                ("Text files", "*.txt"),
-                ("All files", "*.*")
-            ]
-        )
-        
-        if not report_filepath:
+        if not filename:
             print("Report generation cancelled.")
             input("\nPress Enter to continue...")
             return
         
+        filepath = f"{filename}.txt"
+        
         try:
-            with open(report_filepath, 'w') as f:
+            with open(filepath, 'w') as f:
                 f.write("=" * 60 + "\n")
                 f.write("             DERIVAPLOT FUNCTION ANALYSIS REPORT\n")
                 f.write("=" * 60 + "\n\n")
@@ -660,34 +648,12 @@ class ConsoleDerivationPlotter:
                 f.write(f"Report generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write("\nThank you for using DerivaPlot")
             
-            print(f"\nReport saved successfully as '{report_filepath}'")
+            print(f"\nReport saved successfully as '{filepath}'")
             
-            # Ask if user wants to save the plot image alongside the report
-            plot_choice = input("\nDo you want to save the plot image as well? (y/n): ")
-            
-            if plot_choice.lower() == 'y':
-                # Get directory of report file to suggest as default location
-                report_dir = os.path.dirname(report_filepath)
-                report_basename = os.path.splitext(os.path.basename(report_filepath))[0]
-                
-                plot_filepath = filedialog.asksaveasfilename(
-                    initialdir=report_dir,
-                    initialfile=f"{report_basename}_plot.png",
-                    defaultextension=".png",
-                    filetypes=[
-                        ("PNG files", "*.png"),
-                        ("JPEG files", "*.jpg"),
-                        ("PDF files", "*.pdf"),
-                        ("SVG files", "*.svg"),
-                        ("All files", "*.*")
-                    ]
-                )
-                
-                if plot_filepath:
-                    self.fig.savefig(plot_filepath, dpi=300, bbox_inches='tight')
-                    print(f"Plot image saved as '{plot_filepath}'")
-                else:
-                    print("Plot save cancelled.")
+            # Save plot to accompany the report
+            plot_filepath = f"{filename}_plot.png"
+            self.fig.savefig(plot_filepath, dpi=300, bbox_inches='tight')
+            print(f"Plot image saved as '{plot_filepath}'")
             
         except Exception as e:
             print(f"\nError generating report: {e}")
@@ -695,6 +661,7 @@ class ConsoleDerivationPlotter:
         input("\nPress Enter to continue...")
     
     def run(self):
+        """Run the main application loop."""
         while True:
             self.clear_console()
             self.print_header()
@@ -704,11 +671,7 @@ class ConsoleDerivationPlotter:
             
             if choice == '0':
                 print("\nExiting DerivaPlot. Goodbye!")
-                self.root.destroy()
-                print("Console will close in 2 seconds...")
-                time.sleep(2) 
-                sys.exit(0)
-
+                break
             elif choice == '1':
                 self.manage_functions()
             elif choice == '2':
@@ -731,14 +694,14 @@ class ConsoleDerivationPlotter:
                 print("\nInvalid choice. Please enter a number between 0 and 9.")
                 input("\nPress Enter to continue...")
 
+
 def main():
+    """Main entry point for the application."""
     try:
         app = ConsoleDerivationPlotter()
         app.run()
     except KeyboardInterrupt:
         print("\n\nProgram terminated by user. Goodbye!")
-        time.sleep(2)
-        sys.exit(0)
     except Exception as e:
         print(f"\nAn unexpected error occurred: {e}")
         input("\nPress Enter to exit...")
