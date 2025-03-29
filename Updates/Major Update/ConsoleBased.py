@@ -7,6 +7,7 @@ import os
 import sys # type: ignore
 import tkinter as tk
 from tkinter import filedialog
+import time
 
 class ConsoleDerivationPlotter:
     def __init__(self):
@@ -703,8 +704,11 @@ class ConsoleDerivationPlotter:
             
             if choice == '0':
                 print("\nExiting DerivaPlot. Goodbye!")
-                self.root.destroy()  # Clean up tkinter resources
-                break
+                self.root.destroy()
+                print("Console will close in 2 seconds...")
+                time.sleep(2) 
+                sys.exit(0)
+
             elif choice == '1':
                 self.manage_functions()
             elif choice == '2':
@@ -733,6 +737,8 @@ def main():
         app.run()
     except KeyboardInterrupt:
         print("\n\nProgram terminated by user. Goodbye!")
+        time.sleep(2)
+        sys.exit(0)
     except Exception as e:
         print(f"\nAn unexpected error occurred: {e}")
         input("\nPress Enter to exit...")
