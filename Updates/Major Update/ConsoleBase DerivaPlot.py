@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 from scipy.integrate import quad
 import os
 import sys
+import time
 from scipy.optimize import brentq
+from pathlib import Path
 
 
 class ConsoleDerivationPlotter:
@@ -14,6 +16,8 @@ class ConsoleDerivationPlotter:
         self.derivative_order = 1
         self.current_data = None
         self.fig = None
+        # Set default save directory to Downloads folder
+        self.default_save_dir = str(Path.home() / "Downloads")
         
     def clear_console(self):
         """Clear the console screen."""
@@ -453,6 +457,78 @@ class ConsoleDerivationPlotter:
         
         input("\nPress Enter to continue...")
     
+    def get_save_directory(self):
+        """Get directory path from user for saving files."""
+        print("\nSave Location:")
+        print(f"Default: {self.default_save_dir}")
+        print("\nOptions:")
+        print("1. Use default save location")
+        print("2. Specify custom directory")
+        
+        choice = input("\nEnter choice (1-2): ")
+        
+        if choice == '2':
+            while True:
+                dir_path = input("\nEnter directory path (or 'cd' to browse): ")
+                
+                if dir_path.lower() == 'cd':
+                    self.clear_console()
+                    self.print_header()
+                    print("\nBrowse Directories:")
+                    
+                    current_dir = os.getcwd()
+                    print(f"Current directory: {current_dir}")
+                    
+                    while True:
+                        try:
+                            dirs = [d for d in os.listdir(current_dir) if os.path.isdir(os.path.join(current_dir, d))]
+                            
+                            print("\nAvailable directories:")
+                            for i, d in enumerate(dirs):
+                                print(f"{i+1}. {d}")
+                            print(f"{len(dirs)+1}. Parent directory (..)") 
+                            print(f"{len(dirs)+2}. Select current directory")
+                            
+                            dir_choice = input("\nEnter choice number or directory name: ")
+                            
+                            if dir_choice.isdigit():
+                                choice_num = int(dir_choice)
+                                if 1 <= choice_num <= len(dirs):
+                                    # Select a directory from the list
+                                    current_dir = os.path.join(current_dir, dirs[choice_num-1])
+                                elif choice_num == len(dirs) + 1:
+                                    # Go to parent directory
+                                    current_dir = os.path.dirname(current_dir)
+                                elif choice_num == len(dirs) + 2:
+                                    # Select current directory
+                                    return current_dir
+                            else:
+                                # User typed a directory name
+                                new_dir = os.path.join(current_dir, dir_choice)
+                                if os.path.isdir(new_dir):
+                                    current_dir = new_dir
+                                else:
+                                    print(f"Directory '{dir_choice}' not found.")
+                            
+                            self.clear_console()
+                            self.print_header()
+                            print("\nBrowse Directories:")
+                            print(f"Current directory: {current_dir}")
+                            
+                        except Exception as e:
+                            print(f"Error: {e}")
+                            input("\nPress Enter to continue...")
+                else:
+                    # User specified a directory path directly
+                    if os.path.isdir(dir_path):
+                        return dir_path
+                    else:
+                        print(f"Error: Directory '{dir_path}' not found or is not accessible.")
+                        if input("Try again? (y/n): ").lower() != 'y':
+                            return self.default_save_dir
+        
+        return self.default_save_dir
+    
     def save_plot(self):
         """Save the current plot as an image file."""
         self.clear_console()
@@ -471,6 +547,9 @@ class ConsoleDerivationPlotter:
             input("\nPress Enter to continue...")
             return
         
+        # Get save directory from user
+        save_dir = self.get_save_directory()
+        
         print("\nSelect file format:")
         print("1. PNG")
         print("2. JPEG")
@@ -482,7 +561,7 @@ class ConsoleDerivationPlotter:
         extension_map = {"1": "png", "2": "jpg", "3": "pdf", "4": "svg"}
         if choice in extension_map:
             extension = extension_map[choice]
-            filepath = f"{filename}.{extension}"
+            filepath = os.path.join(save_dir, f"{filename}.{extension}")
             
             try:
                 self.fig.savefig(filepath, dpi=300, bbox_inches='tight')
@@ -587,7 +666,10 @@ class ConsoleDerivationPlotter:
             input("\nPress Enter to continue...")
             return
         
-        filepath = f"{filename}.txt"
+        # Get save directory from user
+        save_dir = self.get_save_directory()
+        
+        filepath = os.path.join(save_dir, f"{filename}.txt")
         
         try:
             with open(filepath, 'w') as f:
@@ -649,9 +731,8 @@ class ConsoleDerivationPlotter:
                 f.write("\nThank you for using DerivaPlot")
             
             print(f"\nReport saved successfully as '{filepath}'")
-            
-            # Save plot to accompany the report
-            plot_filepath = f"{filename}_plot.png"
+
+            plot_filepath = os.path.join(save_dir, f"{filename}_plot.png")
             self.fig.savefig(plot_filepath, dpi=300, bbox_inches='tight')
             print(f"Plot image saved as '{plot_filepath}'")
             
@@ -671,6 +752,7 @@ class ConsoleDerivationPlotter:
             
             if choice == '0':
                 print("\nExiting DerivaPlot. Goodbye!")
+                time.sleep(2)
                 break
             elif choice == '1':
                 self.manage_functions()
@@ -702,9 +784,11 @@ def main():
         app.run()
     except KeyboardInterrupt:
         print("\n\nProgram terminated by user. Goodbye!")
+        time.sleep(2)
     except Exception as e:
         print(f"\nAn unexpected error occurred: {e}")
         input("\nPress Enter to exit...")
+        time.sleep(2) 
 
 
 if __name__ == "__main__":
