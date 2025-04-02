@@ -16,7 +16,6 @@ class ConsoleDerivationPlotter:
         self.derivative_order = 1
         self.current_data = None
         self.fig = None
-        # Set default save directory to Downloads folder
         self.default_save_dir = str(Path.home() / "Downloads")
         
     def clear_console(self):
@@ -55,8 +54,7 @@ class ConsoleDerivationPlotter:
                 "pi": sp.pi, "e": sp.E
             })
             f = sp.lambdify(x, sympy_expr, 'numpy')
-            
-            # Test the function with a simple value
+
             test_x = np.array([0.5])
             f(test_x)
             
@@ -185,8 +183,7 @@ class ConsoleDerivationPlotter:
         
         try:
             print("\nPlotting functions...")
-            
-            # Close previous plot if exists
+
             if self.fig is not None:
                 plt.close(self.fig)
             
@@ -206,9 +203,9 @@ class ConsoleDerivationPlotter:
                 
                 ax.plot(x_vals, y_vals, label=f'Function: {expr}', color=base_color, linewidth=2)
                 ax.plot(x_vals, dydx_vals, label=f'{self.derivative_order}-Order Derivative of {expr}', 
-                       color=base_color, linestyle='dashed', linewidth=1.5)
+                    color=base_color, linestyle='dashed', linewidth=1.5)
                 ax.plot(x_vals, integral_vals, label=f'Integral of {expr}', 
-                       color=base_color, linestyle='dotted', linewidth=1.5)
+                    color=base_color, linestyle='dotted', linewidth=1.5)
                 
                 all_functions_data.append({
                     "expr": expr, 
@@ -232,13 +229,10 @@ class ConsoleDerivationPlotter:
                 "order": self.derivative_order,
                 "function_data": all_functions_data
             }
-            
-            # Display plot
+
             plt.show(block=False)
             print("\nPlot created successfully.")
             print("(Close the plot window to continue)")
-            
-            # Wait for the plot window to be closed
             plt.waitforbuttonpress()
             
         except Exception as e:
@@ -255,11 +249,8 @@ class ConsoleDerivationPlotter:
                 "pi": sp.pi, "e": sp.E
             })
             derivative = sp.diff(expr, x)
-            
-            # Find numerical approximations of roots
+
             critical_points = sp.nroots(derivative)
-            
-            # Filter for valid points within range and only real values
             valid_critical_points = [
                 point for point in critical_points 
                 if x_range[0] <= float(point.evalf()) <= x_range[1] and sp.im(point) == 0
@@ -297,8 +288,7 @@ class ConsoleDerivationPlotter:
         
         try:
             print("\nCalculating critical values...")
-            
-            # Close previous plot if exists
+
             if self.fig is not None:
                 plt.close(self.fig)
             
@@ -307,8 +297,7 @@ class ConsoleDerivationPlotter:
             
             colors = plt.cm.tab10.colors
             critical_values_data = []
-            
-            # Display critical values in console
+
             print("\nCritical Values:")
             print("-" * 60)
             
@@ -318,11 +307,8 @@ class ConsoleDerivationPlotter:
                 
                 y_vals = f(x_vals)
                 critical_values = self.find_critical_values(expr, self.x_range)
-                
-                # Plot function
                 ax.plot(x_vals, y_vals, label=f'Function: {expr}', color=base_color, linewidth=2)
-                
-                # Print and plot critical values
+
                 print(f"\nFunction: {expr}")
                 if critical_values:
                     cv_x = [point['x'] for point in critical_values]
@@ -362,13 +348,11 @@ class ConsoleDerivationPlotter:
                 "x_range": self.x_range, 
                 "critical_values": critical_values_data
             }
-            
-            # Display plot
+
             plt.show(block=False)
             print("\nPlot with critical values created successfully.")
             print("(Close the plot window to continue)")
-            
-            # Wait for the plot window to be closed
+
             plt.waitforbuttonpress()
             
         except Exception as e:
@@ -386,37 +370,32 @@ class ConsoleDerivationPlotter:
                 "pi": sp.pi, "e": sp.E
             })
             
-            # Try to find symbolic roots first
+
             try:
                 symbolic_roots = sp.solve(expr, x)
                 roots = [float(root.evalf()) for root in symbolic_roots if root.is_real]
             except Exception:
-                # If symbolic solution fails, try numerical methods
                 roots = []
-                
-                # Use numerical method to find roots
-                f_lambda = sp.lambdify(x, expr, 'numpy')
+
+                sp.lambdify(x, expr, 'numpy')
                 
                 def f(val):
                     return float(expr.subs(x, val))
-                
-                # Try to find roots in different intervals
+
                 intervals = [(-100, -10), (-10, -1), (-1, 0), (0, 1), (1, 10), (10, 100)]
                 
                 for a, b in intervals:
                     try:
-                        if f(a) * f(b) <= 0:  # Root exists in interval
+                        if f(a) * f(b) <= 0: 
                             root = brentq(f, a, b)
                             roots.append(root)
                     except Exception:
                         continue
-            
-            # Filter out duplicates and ensure all are valid numbers
+
             valid_roots = []
             for root in roots:
                 try:
                     root_val = float(root)
-                    # Check if this root is already in our list (within small tolerance)
                     if not any(abs(root_val - existing) < 1e-10 for existing in valid_roots):
                         valid_roots.append(root_val)
                 except Exception:
@@ -494,13 +473,10 @@ class ConsoleDerivationPlotter:
                             if dir_choice.isdigit():
                                 choice_num = int(dir_choice)
                                 if 1 <= choice_num <= len(dirs):
-                                    # Select a directory from the list
                                     current_dir = os.path.join(current_dir, dirs[choice_num-1])
                                 elif choice_num == len(dirs) + 1:
-                                    # Go to parent directory
                                     current_dir = os.path.dirname(current_dir)
                                 elif choice_num == len(dirs) + 2:
-                                    # Select current directory
                                     return current_dir
                             else:
                                 # User typed a directory name
@@ -519,7 +495,6 @@ class ConsoleDerivationPlotter:
                             print(f"Error: {e}")
                             input("\nPress Enter to continue...")
                 else:
-                    # User specified a directory path directly
                     if os.path.isdir(dir_path):
                         return dir_path
                     else:
@@ -683,8 +658,7 @@ class ConsoleDerivationPlotter:
                 
                 f.write(f"\nX RANGE: [{self.x_range[0]}, {self.x_range[1]}]\n")
                 f.write(f"DERIVATIVE ORDER: {self.derivative_order}\n\n")
-                
-                # Add critical values if calculated
+
                 if self.current_data and 'critical_values' in self.current_data:
                     f.write("CRITICAL VALUES:\n")
                     for func_data in self.current_data['critical_values']:
@@ -695,8 +669,7 @@ class ConsoleDerivationPlotter:
                         else:
                             f.write("    No critical values found\n")
                     f.write("\n")
-                
-                # Add roots
+
                 f.write("ROOTS:\n")
                 for expr, _ in self.functions:
                     f.write(f"  Function: {expr}\n")
@@ -710,8 +683,7 @@ class ConsoleDerivationPlotter:
                     else:
                         f.write("    No real roots found\n")
                 f.write("\n")
-                
-                # Add statistics
+
                 stats = self.calculate_statistics()
                 if stats:
                     f.write("STATISTICS:\n")
@@ -724,8 +696,7 @@ class ConsoleDerivationPlotter:
                     for i, (expr, _) in enumerate(self.functions):
                         f.write(f"    {expr}: {stats['areas'][i]:.4f}\n")
                     f.write(f"  Total Area: {stats['total_area']:.4f}\n\n")
-                
-                # Add date and footer
+
                 from datetime import datetime
                 f.write(f"Report generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write("\nThank you for using DerivaPlot")
